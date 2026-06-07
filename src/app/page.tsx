@@ -1,65 +1,128 @@
-import Image from "next/image";
+/**
+ * app/page.tsx — Server Component
+ * Fetcha datos directamente de la DB en el servidor
+ * y los pasa al Dashboard (Client Component) como props.
+ */
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+import { db } from "@/lib/db";
+import Dashboard from "@/components/Dashboard";
+import type { DashboardSummary, Account, CreditCard, SystemConfig } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+
+function getAccounts(): Account[] {
+  return db
+    .prepare(
+      `SELECT id, name, type, initialBalance, currency, status, createdAt, updatedAt
+       FROM dim_cuentas WHERE status = 'ACTIVA' ORDER BY type, name`
+    )
+    .all() as Account[];
+}
+
+function getCreditCards(): CreditCard[] {
+  return db
+    .prepare(
+      `SELECT id, name, bank, totalLimit, closingDay, paymentDay, createdAt, updatedAt
+       FROM dim_tarjetas_credito ORDER BY name`
+    )
+    .all() as CreditCard[];
+}
+
+function getCategories(): Record<string, { subcategory: string; suggestedBudget: number }[]> {
+  const rows = db
+    .prepare(
+      `SELECT category, subcategory, suggestedBudget FROM sys_config ORDER BY category, subcategory`
+    )
+    .all() as SystemConfig[];
+
+  const grouped: Record<string, { subcategory: string; suggestedBudget: number }[]> = {};
+  for (const row of rows) {
+    if (!grouped[row.category]) grouped[row.category] = [];
+    grouped[row.category].push({
+      subcategory: row.subcategory,
+      suggestedBudget: row.suggestedBudget,
+    });
+  }
+  return grouped;
+}
+
+async function getDashboardData(): Promise<DashboardSummary> {
+  const ahora = new Date();
+  const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString();
+
+  // Liquidez
+  const rowLiquidez = db
+    .prepare(
+      `SELECT SUM(
+         initialBalance +
+         COALESCE((SELECT SUM(CASE WHEN type = 'INGRESO' THEN amount ELSE -amount END)
+                   FROM fact_transacciones
+                   WHERE accountId = c.id), 0)
+       ) as total
+       FROM dim_cuentas c WHERE status = 'ACTIVA'`
+    )
+    .get() as { total: number | null };
+  const totalLiquidity = rowLiquidez.total || 0;
+
+  // Cupo TC
+  const rowTcUsed = db
+    .prepare(
+      `SELECT SUM(totalAmount) as used
+       FROM fact_compras_cuotas WHERE status = 'VIGENTE'`
+    )
+    .get() as { used: number | null };
+  const creditCardUsed = rowTcUsed.used || 0;
+
+  const rowTcTotal = db
+    .prepare(`SELECT SUM(totalLimit) as total FROM dim_tarjetas_credito`)
+    .get() as { total: number | null };
+  const creditCardLimit = rowTcTotal.total || 0;
+  const creditCardUsedPercent = creditCardLimit > 0 ? (creditCardUsed / creditCardLimit) * 100 : 0;
+
+  // Gastos
+  const rowGastos = db
+    .prepare(
+      `SELECT SUM(amount) as total
+       FROM fact_transacciones
+       WHERE type = 'GASTO' AND date >= ?`
+    )
+    .get(primerDiaMes) as { total: number | null };
+  const expenses = rowGastos.total || 0;
+
+  // Transacciones
+  const txs = db
+    .prepare(
+      `SELECT id, type, date, amount, category, subcategory, description, accountId, debtReferenceId
+       FROM fact_transacciones
+       ORDER BY date DESC LIMIT 7`
+    )
+    .all() as DashboardSummary["recentTransactions"];
+
+  // Cuentas con saldo (para la tira de cuentas)
+  const cuentasActivas = db
+    .prepare(
+      `SELECT id, name, type,
+         (initialBalance +
+         COALESCE((SELECT SUM(CASE WHEN type = 'INGRESO' THEN amount ELSE -amount END)
+                   FROM fact_transacciones
+                   WHERE accountId = c.id), 0)) as currentBalance
+       FROM dim_cuentas c WHERE status = 'ACTIVA' ORDER BY type, name`
+    )
+    .all() as DashboardSummary["cuentasActivas"];
+
+  return {
+    liquidezTotal: totalLiquidity,
+    cupoUtilizadoTC: creditCardUsed,
+    limiteTC: creditCardLimit,
+    cupoUtilizadoPct: creditCardUsedPercent,
+    gastosCorrientesMes: expenses,
+    recentTransactions: txs,
+    cuentasActivas: cuentasActivas,
+  };
+}
+
+export default async function HomePage() {
+  const summary = await getDashboardData();
+
+  return <Dashboard initialData={summary} />;
 }

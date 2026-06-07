@@ -1,0 +1,97 @@
+// ─────────────────────────────────────────────────────────────
+//  FinControl — Prisma Schema (fusión mejorada)
+//  DB: SQLite  |  ORM: Prisma v7
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  // url va en prisma.config.ts (requerido por Prisma v7)
+}
+
+// ─── dim_cuentas ─────────────────────────────────────────────
+model Account {
+  id             String        @id @default(cuid())
+  name           String
+  type           String        // EFECTIVO | AHORROS | CORRIENTE
+  initialBalance Float         @default(0)
+  currency       String        @default("COP")  // COP | USD
+  status         String        @default("ACTIVA") // ACTIVA | INACTIVA
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  transactions   Transaction[]
+
+  @@map("dim_cuentas")
+}
+
+// ─── dim_tarjetas_credito ─────────────────────────────────────
+model CreditCard {
+  id                   String                @id @default(cuid())
+  name                 String
+  bank                 String
+  totalLimit           Float
+  closingDay           Int
+  paymentDay           Int
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  installmentPurchases InstallmentPurchase[]
+
+  @@map("dim_tarjetas_credito")
+}
+
+// ─── fact_transacciones ───────────────────────────────────────
+model Transaction {
+  id              String    @id @default(cuid())
+  date            DateTime  @default(now())
+  type            String    // INGRESO | GASTO | TRANSFERENCIA
+  category        String
+  subcategory     String
+  amount          Float
+  description     String?                      // opcional
+  debtReferenceId String?                      // FK opcional → InstallmentPurchase
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // FK opcional → Account (toda TX pertenece a una cuenta o a una tarjeta)
+  accountId       String?
+  account         Account?  @relation(fields: [accountId], references: [id])
+
+  @@map("fact_transacciones")
+}
+
+// ─── fact_compras_cuotas ──────────────────────────────────────
+model InstallmentPurchase {
+  id              String     @id @default(cuid())
+  purchaseDate    DateTime   @default(now())
+  establishment   String
+  totalAmount     Float
+  totalMonths     Int
+  paidMonths      Int        @default(0)
+  monthlyInterest Float      @default(0.0)
+  status          String     @default("VIGENTE") // VIGENTE | AMORTIZADA
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  creditCardId    String
+  creditCard      CreditCard @relation(fields: [creditCardId], references: [id])
+
+  @@map("fact_compras_cuotas")
+}
+
+// ─── sys_config ───────────────────────────────────────────────
+model SystemConfig {
+  id              Int      @id @default(autoincrement())
+  category        String
+  subcategory     String
+  suggestedBudget Float    @default(0)
+  createdAt       DateTime @default(now())
+
+  @@unique([category, subcategory])
+  @@map("sys_config")
+}

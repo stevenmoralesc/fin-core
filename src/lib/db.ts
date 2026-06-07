@@ -1,0 +1,32 @@
+/**
+ * src/lib/db.ts
+ * ─────────────────────────────────────────────────────────────
+ * Singleton de better-sqlite3 para usar en API Routes (server-side).
+ * Evita múltiples conexiones en desarrollo con hot-reload.
+ * ─────────────────────────────────────────────────────────────
+ */
+
+import Database from "better-sqlite3";
+import path from "path";
+
+const DB_PATH = path.join(process.cwd(), "dev.db");
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __db: Database.Database | undefined;
+}
+
+function createDb(): Database.Database {
+  const db = new Database(DB_PATH);
+  // WAL mode para mejor performance en lecturas concurrentes
+  db.pragma("journal_mode = WAL");
+  db.pragma("foreign_keys = ON");
+  return db;
+}
+
+export const db: Database.Database =
+  globalThis.__db ?? (globalThis.__db = createDb());
+
+if (process.env.NODE_ENV !== "production") {
+  globalThis.__db = db;
+}

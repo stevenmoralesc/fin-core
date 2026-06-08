@@ -10,9 +10,10 @@ interface ModalProps {
   creditCards: CreditCardType[];
   categories: CategoriesByType;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export default function TransactionModal({ accounts, creditCards, categories, onClose }: ModalProps) {
+export default function TransactionModal({ accounts, creditCards, categories, onClose, onSuccess }: ModalProps) {
   const router = useRouter();
   
   const [form, setForm] = useState({
@@ -60,8 +61,8 @@ export default function TransactionModal({ accounts, creditCards, categories, on
         const data = await res.json();
         throw new Error(data.error ?? "Error desconocido");
       }
-      
       router.refresh();
+      onSuccess?.();
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al guardar");

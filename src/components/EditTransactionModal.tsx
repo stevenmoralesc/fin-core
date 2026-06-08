@@ -9,12 +9,14 @@ interface EditTransactionModalProps {
   transaction: Pick<Transaction, "id" | "date" | "type" | "amount" | "category" | "subcategory" | "description">;
   categories: CategoriesByType;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 export default function EditTransactionModal({
   transaction,
   categories,
   onClose,
+  onSuccess,
 }: EditTransactionModalProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -48,6 +50,7 @@ export default function EditTransactionModal({
       });
       if (!res.ok) throw new Error((await res.json()).error);
       router.refresh();
+      onSuccess?.();
       onClose();
     } catch (err: any) {
       alert("Error: " + err.message);
@@ -61,6 +64,7 @@ export default function EditTransactionModal({
     try {
       await fetch(`/api/transactions/${transaction.id}`, { method: "DELETE" });
       router.refresh();
+      onSuccess?.();
       onClose();
     } catch (err: any) {
       alert("Error: " + err.message);

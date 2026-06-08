@@ -78,14 +78,11 @@ export default async function RootLayout({
   return (
     <html lang="es" className={inter.variable}>
       <body className="min-h-screen bg-[#f9fafb] font-sans antialiased overflow-hidden">
-        <div className="flex h-screen bg-[#f9fafb] overflow-hidden">
+        <div className="flex h-screen w-screen overflow-hidden bg-[#f9fafb]">
           <Sidebar />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Header accounts={accounts} creditCards={creditCards} categories={categories} />
-            <main className="flex-1 overflow-y-auto p-6">
-              {children}
-            </main>
-          </div>
+          <main className="flex-1 h-full overflow-y-auto p-6 md:p-10 flex flex-col gap-6">
+            {children}
+          </main>
         </div>
       </body>
     </html>

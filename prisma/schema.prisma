@@ -41,8 +41,27 @@ model CreditCard {
   updatedAt            DateTime              @updatedAt
 
   installmentPurchases InstallmentPurchase[]
+  statements           CreditCardStatement[]
 
   @@map("dim_tarjetas_credito")
+}
+
+// ─── fact_estados_cuenta ──────────────────────────────────────
+model CreditCardStatement {
+  id           String     @id @default(cuid())
+  startDate    DateTime
+  closingDate  DateTime
+  dueDate      DateTime
+  status       String     @default("ABIERTO") // ABIERTO | FACTURADO | PAGADO
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  creditCardId String
+  creditCard   CreditCard @relation(fields: [creditCardId], references: [id])
+
+  installmentPurchases InstallmentPurchase[]
+
+  @@map("fact_estados_cuenta")
 }
 
 // ─── fact_transacciones ───────────────────────────────────────
@@ -81,6 +100,9 @@ model InstallmentPurchase {
   creditCardId    String
   creditCard      CreditCard @relation(fields: [creditCardId], references: [id])
 
+  statementId     String?
+  statement       CreditCardStatement? @relation(fields: [statementId], references: [id])
+
   @@map("fact_compras_cuotas")
 }
 
@@ -90,6 +112,7 @@ model SystemConfig {
   category        String
   subcategory     String
   suggestedBudget Float    @default(0)
+  transactionType String   @default("GASTO")
   createdAt       DateTime @default(now())
 
   @@unique([category, subcategory])

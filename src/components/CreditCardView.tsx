@@ -123,9 +123,9 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
   const amortizadas = installments.filter((i) => i.status === "AMORTIZADA");
 
   return (
-    <>
+    <div className="p-6 md:p-10 space-y-8 max-w-7xl mx-auto">
       {/* ── Selector de Tarjetas ── */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 items-center">
+      <div className="flex gap-2 overflow-x-auto pb-1 items-center">
         {initialData.map((d, index) => (
           <button
             key={d.card.id}
@@ -153,7 +153,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
       </div>
 
       {/* ── Encabezado de la tarjeta actual ── */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center shadow-sm">
             <CreditCard size={20} className="text-white" />
@@ -193,7 +193,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
       </div>
 
       {/* ── KPI Grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {kpiData.map((kpi) => (
           <KpiCard key={kpi.title} {...kpi} />
         ))}
@@ -201,13 +201,12 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
 
       {/* ── Tabla Vigentes ── */}
       <div
-        className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-6"
-        style={{ boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.08)" }}
+        className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
           <div>
             <h2 className="text-sm font-bold text-gray-900">Compras Vigentes</h2>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-400 mt-0.5 tracking-wide">
               {vigentes.length === 0 ? "Sin compras activas" : `${vigentes.length} compra${vigentes.length > 1 ? "s" : ""} en cuotas`}
             </p>
           </div>
@@ -227,94 +226,88 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50/60 border-b border-gray-100 text-[10px] uppercase tracking-wider font-bold text-gray-400">
-                  <th className="px-6 py-3">Establecimiento</th>
-                  <th className="px-6 py-3">Fecha</th>
-                  <th className="px-6 py-3 text-center">Progreso</th>
-                  <th className="px-6 py-3 text-right">Valor Total</th>
-                  <th className="px-6 py-3 text-right">Cuota / Mes</th>
-                  <th className="px-6 py-3 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 text-sm">
-                {vigentes.map((inst) => {
-                  const monthly = inst.totalAmount / inst.totalMonths;
-                  const pct = (inst.paidMonths / inst.totalMonths) * 100;
-                  const remaining = inst.totalMonths - inst.paidMonths;
+          <div className="flex flex-col">
+            {/* Table Header */}
+            <div className="grid grid-cols-7 gap-4 bg-gray-50/60 border-b border-gray-100 text-[10px] uppercase tracking-wider font-bold text-gray-400 px-6 py-3">
+              <div className="col-span-2">Establecimiento</div>
+              <div>Fecha</div>
+              <div className="text-center">Progreso</div>
+              <div className="text-right">Valor Total</div>
+              <div className="text-right">Cuota / Mes</div>
+              <div className="text-center">Acciones</div>
+            </div>
 
-                  return (
-                    <tr key={inst.id} className="hover:bg-gray-50/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <p className="font-semibold text-gray-800">{inst.establishment}</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
-                          {remaining} {remaining === 1 ? "cuota restante" : "cuotas restantes"}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 text-xs text-gray-500">
-                        {new Date(inst.purchaseDate).toLocaleDateString("es-CO", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col items-center gap-1.5">
-                          <span className="text-xs font-bold text-gray-700">
-                            {inst.paidMonths}/{inst.totalMonths}
-                          </span>
-                          <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium text-gray-700">
-                        {formatCOP(inst.totalAmount)}
-                      </td>
-                      <td className="px-6 py-4 text-right font-bold text-gray-900">
-                        {formatCOP(monthly)}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handlePayInstallment(inst.id)}
-                            disabled={isPending}
-                            title="Marcar cuota como pagada"
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
-                          >
-                            <CalendarCheck size={13} />
-                            Pagar cuota
-                          </button>
-                          <button
-                            onClick={() => setConfirmDeleteId(inst.id)}
-                            title="Eliminar esta compra"
-                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            {/* Table Body */}
+            <div className="divide-y divide-gray-50 text-sm">
+              {vigentes.map((inst) => {
+                const monthly = inst.totalAmount / inst.totalMonths;
+                const pct = (inst.paidMonths / inst.totalMonths) * 100;
+                const remaining = inst.totalMonths - inst.paidMonths;
+
+                return (
+                  <div key={inst.id} className="grid grid-cols-7 gap-4 items-center px-6 py-5 hover:bg-gray-50/50 transition-colors group">
+                    <div className="col-span-2">
+                      <p className="font-semibold text-gray-800 truncate">{inst.establishment}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {remaining} {remaining === 1 ? "cuota restante" : "cuotas restantes"}
+                      </p>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(inst.purchaseDate).toLocaleDateString("es-CO", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </div>
+                    <div className="flex flex-col items-center justify-center gap-1.5">
+                      <span className="text-xs font-bold text-gray-700">
+                        {inst.paidMonths}/{inst.totalMonths}
+                      </span>
+                      <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="text-right font-medium text-gray-700">
+                      {formatCOP(inst.totalAmount)}
+                    </div>
+                    <div className="text-right font-bold text-gray-900">
+                      {formatCOP(monthly)}
+                    </div>
+                    <div className="flex items-center justify-center gap-2 opacity-100 sm:opacity-60 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handlePayInstallment(inst.id)}
+                        disabled={isPending}
+                        title="Marcar cuota como pagada"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                      >
+                        <CalendarCheck size={13} />
+                        Pagar cuota
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(inst.id)}
+                        title="Eliminar esta compra"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
 
-      {/* ── Historial Amortizadas ── */}
+       {/* ── Historial Amortizadas ── */}
       {amortizadas.length > 0 && (
         <div
-          className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
-          style={{ boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.08)" }}
+          className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm"
         >
-          <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+          <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
             <h2 className="text-sm font-bold text-gray-900">Historial Pagado</h2>
             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg flex items-center gap-1">
               <CheckCircle2 size={11} /> {amortizadas.length} amortizadas
@@ -324,11 +317,11 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
             {amortizadas.map((inst) => (
               <div
                 key={inst.id}
-                className="px-6 py-3.5 flex items-center justify-between opacity-60 hover:opacity-80 transition-opacity"
+                className="px-6 py-4 flex items-center justify-between opacity-70 hover:opacity-100 hover:bg-gray-50/50 transition-all"
               >
                 <div>
                   <p className="text-sm font-medium text-gray-700">{inst.establishment}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-400 mt-0.5">
                     {inst.totalMonths} cuotas ·{" "}
                     {new Date(inst.purchaseDate).toLocaleDateString("es-CO", {
                       month: "short",
@@ -340,7 +333,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
                   <span className="text-sm font-bold text-gray-500">
                     {formatCOP(inst.totalAmount)}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
                     Pagada
                   </span>
                 </div>
@@ -350,48 +343,44 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
         </div>
       )}
 
-      {/* ── Modal Nueva Compra ── */}
+      {/* Modals */}
       {modalOpen && (
         <InstallmentModal
-          cards={allCards}
-          preselectedCardId={card.id}
+          creditCardId={card.id}
           onClose={() => setModalOpen(false)}
         />
       )}
-
-      {/* ── Modal Pagar Factura ── */}
       {payModalOpen && (
         <BillPaymentModal
           card={card}
-          billAmount={stats.nextBillAmount}
+          stats={stats}
           accounts={accounts}
           onClose={() => setPayModalOpen(false)}
         />
       )}
-
-      {/* ── Confirm Delete ── */}
+      {/* Confirm Delete */}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
+          <div className="bg-white rounded-[24px] max-w-sm w-full p-6 text-center shadow-2xl">
             <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={22} className="text-red-500" />
+              <Trash2 size={24} className="text-red-500" />
             </div>
-            <h3 className="text-base font-bold text-gray-900 mb-1">¿Eliminar esta compra?</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">¿Eliminar compra?</h3>
             <p className="text-sm text-gray-500 mb-6">
-              Se borrará el registro permanentemente y no se podrá recuperar.
+              Esta acción eliminará el registro de cuotas y recalculará el cupo de tu tarjeta. No se puede deshacer.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDeleteId(null)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => handleDeleteInstallment(confirmDeleteId)}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"
+                className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"
               >
-                Sí, eliminar
+                Eliminar
               </button>
             </div>
           </div>
@@ -399,6 +388,6 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
       )}
       {addCardOpen && <AddCreditCardModal onClose={() => setAddCardOpen(false)} />}
       {editCardOpen && <EditCreditCardModal card={card} onClose={() => setEditCardOpen(false)} />}
-    </>
+    </div>
   );
 }

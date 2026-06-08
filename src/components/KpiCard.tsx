@@ -40,28 +40,22 @@ export default function KpiCard({
         : "#374151";
 
   return (
-    <div
-      className="group relative bg-white rounded-2xl border border-gray-100 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 cursor-default overflow-hidden"
-      style={{ boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.08)" }}
+    <div 
+      className="group bg-white p-6 rounded-2xl border border-gray-100/80 shadow-sm flex flex-col justify-between min-h-[140px] gap-3 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+      style={{ borderTopWidth: '3px', borderTopColor: accentColor }}
     >
-      {/* Accent gradient top bar */}
-      <div
-        className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl opacity-60"
-        style={{ backgroundColor: accentColor }}
-      />
-
       {/* Header row */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
             {title}
           </p>
           {subtitle && (
-            <p className="text-[11px] text-gray-400">{subtitle}</p>
+            <p className="text-[11px] text-gray-400 font-medium tracking-wide">{subtitle}</p>
           )}
         </div>
         <div
-          className="flex items-center justify-center w-10 h-10 rounded-xl transition-colors duration-200"
+          className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-colors duration-200"
           style={{ backgroundColor: accentBg }}
         >
           <Icon size={18} style={{ color: accentText }} strokeWidth={2} />
@@ -69,19 +63,19 @@ export default function KpiCard({
       </div>
 
       {/* Value */}
-      <div className="mb-3">
-        <span className="text-2xl font-bold text-gray-900 tracking-tight">
+      <div>
+        <span className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
           {value}
         </span>
       </div>
 
       {/* Trend */}
       {trend && (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 mt-1">
           {trend.positive ? (
-            <TrendingUp size={13} className="text-emerald-500" />
+            <TrendingUp size={14} className="text-emerald-500" />
           ) : (
-            <TrendingDown size={13} className="text-red-500" />
+            <TrendingDown size={14} className="text-red-500" />
           )}
           <span
             className={`text-xs font-semibold ${
@@ -90,7 +84,7 @@ export default function KpiCard({
           >
             {trend.value}
           </span>
-          <span className="text-xs text-gray-400">{trend.label}</span>
+          <span className="text-xs font-medium text-gray-400">{trend.label}</span>
         </div>
       )}
     </div>

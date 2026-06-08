@@ -74,21 +74,26 @@ export default function EditTransactionModal({
   };
 
   const inputClass =
-    "w-full border-b border-gray-200 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-gray-800 transition-colors bg-transparent";
+    "w-full border-b py-2.5 text-sm focus:outline-none transition-colors bg-transparent";
+  const inputStyle = { color: "var(--text-primary)", borderColor: "var(--border)" };
   const labelClass =
-    "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1";
+    "block text-[10px] font-bold uppercase tracking-widest mb-1";
+  const labelStyle = { color: "var(--text-muted)" };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-      <div className="bg-white rounded-[24px] w-full max-w-[440px] shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
+      <div className="rounded-[24px] w-full max-w-[440px] shadow-2xl overflow-hidden" style={{ background: "var(--bg-surface)" }}>
+        <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: "var(--border-subtle)" }}>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Editar Transacción</h2>
-            <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[260px]">{transaction.description}</p>
+            <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Editar Transacción</h2>
+            <p className="text-xs mt-0.5 truncate max-w-[260px]" style={{ color: "var(--text-muted)" }}>{transaction.description}</p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+            style={{ color: "var(--text-muted)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-2)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
             <X size={20} />
           </button>

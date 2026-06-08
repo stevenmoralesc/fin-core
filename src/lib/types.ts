@@ -33,9 +33,10 @@ export interface Transaction {
   category: string;
   subcategory: string;
   amount: number;
-  description: string | null;  // opcional
-  accountId: string | null;    // opcional (null = pagado con TC)
-  debtReferenceId: string | null; // vínculo opcional con cuota
+  description: string | null;
+  accountId: string | null;
+  debtReferenceId: string | null;
+  paymentMethodName?: string | null;  // joined from account or credit card name
   createdAt: string;
   updatedAt: string;
 }

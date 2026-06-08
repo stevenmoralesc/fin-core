@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { db } from "@/lib/db";
 import type { Account, CreditCard, SystemConfig } from "@/lib/types";
 
@@ -76,14 +76,30 @@ export default async function RootLayout({
   ]);
 
   return (
-    <html lang="es" className={inter.variable}>
-      <body className="min-h-screen bg-[#f9fafb] font-sans antialiased overflow-hidden">
-        <div className="flex h-screen w-screen overflow-hidden bg-[#f9fafb]">
-          <Sidebar />
-          <main className="flex-1 h-full overflow-y-auto p-6 md:p-10 flex flex-col gap-6">
-            {children}
-          </main>
-        </div>
+    <html lang="es" className={inter.variable} suppressHydrationWarning>
+      <head>
+        {/* Anti-flash: apply theme before first paint */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');var dark=(t==='dark')||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',dark?'dark':'light');}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body
+        className="min-h-screen font-sans antialiased overflow-hidden"
+        style={{ background: "var(--bg-base)", color: "var(--text-primary)" }}
+      >
+        <ThemeProvider>
+          <div
+            className="flex h-screen w-screen overflow-hidden"
+            style={{ background: "var(--bg-base)" }}
+          >
+            <Sidebar />
+            <main className="flex-1 h-full overflow-y-auto p-6 md:p-10 flex flex-col gap-6">
+              {children}
+            </main>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

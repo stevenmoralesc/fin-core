@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Wallet, CreditCard, ShoppingCart, ArrowUpRight, ArrowDownLeft, MoreHorizontal } from "lucide-react";
 import KpiCard from "@/components/KpiCard";
-import type { DashboardSummary } from "@/lib/types";
+import EditTransactionModal from "@/components/EditTransactionModal";
+import type { DashboardSummary, CategoriesByType, Transaction } from "@/lib/types";
 
 // ── Helpers ───────────────────────────────────────────────────
 function formatCOP(value: number, showSign = true): string {
@@ -23,16 +25,19 @@ function relativeDate(isoDate: string): string {
   const now = new Date();
   const diff = now.getTime() - date.getTime();
   const days = Math.floor(diff / 86_400_000);
-  if (days === 0) return `Hoy, ${date.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}`;
-  if (days === 1) return `Ayer, ${date.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}`;
+  if (days === 0) return "Hoy";
+  if (days === 1) return "Ayer";
   return date.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
 }
 
 interface DashboardProps {
   initialData: DashboardSummary;
+  categories: CategoriesByType;
 }
 
-export default function Dashboard({ initialData: data }: DashboardProps) {
+export default function Dashboard({ initialData: data, categories }: DashboardProps) {
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+
   // ── KPI data derived from real data ──────────────────────────
   const kpiData = [
     {
@@ -82,7 +87,7 @@ export default function Dashboard({ initialData: data }: DashboardProps) {
             </div>
             <div>
               <p className="text-[10px] text-gray-400 leading-none">{acc.name}</p>
-              <p className="text-xs font-bold text-gray-800">{formatCOPShort(acc.initialBalance + ((acc as any).currentBalance || 0))}</p>
+              <p className="text-xs font-bold text-gray-800">{formatCOPShort((acc as any).currentBalance ?? 0)}</p>
             </div>
           </div>
         ))}
@@ -147,6 +152,7 @@ export default function Dashboard({ initialData: data }: DashboardProps) {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{tx.description}</p>
                   <p className="text-xs text-gray-400">
+                    {tx.paymentMethodName ? <span className="font-medium text-gray-600">{tx.paymentMethodName} · </span> : ""}
                     {tx.category} · {tx.subcategory} · {relativeDate(tx.date)}
                   </p>
                 </div>
@@ -157,7 +163,11 @@ export default function Dashboard({ initialData: data }: DashboardProps) {
                 >
                   {formatCOP(tx.type === "INGRESO" ? tx.amount : -tx.amount)}
                 </span>
-                <button className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 shrink-0">
+                <button
+                  onClick={() => setEditingTx(tx as Transaction)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-400 shrink-0"
+                  title="Editar transacción"
+                >
                   <MoreHorizontal size={14} />
                 </button>
               </div>
@@ -165,6 +175,15 @@ export default function Dashboard({ initialData: data }: DashboardProps) {
           </div>
         )}
       </div>
+
+      {editingTx && (
+        <EditTransactionModal
+          transaction={editingTx}
+          categories={categories}
+          onClose={() => setEditingTx(null)}
+        />
+      )}
     </>
   );
 }
+

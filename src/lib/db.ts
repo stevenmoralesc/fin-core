@@ -18,7 +18,6 @@ declare global {
 
 function createDb(): Database.Database {
   const db = new Database(DB_PATH);
-  // WAL mode para mejor performance en lecturas concurrentes
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   return db;
@@ -29,4 +28,13 @@ export const db: Database.Database =
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.__db = db;
+}
+
+// ── Migraciones inline (siempre se evalúan en cada hot-reload) ────
+// Añade transactionType a sys_config si no existe (idempotente)
+const _cols = db.prepare("PRAGMA table_info(sys_config)").all() as { name: string }[];
+if (!_cols.find((c) => c.name === "transactionType")) {
+  db.prepare(
+    `ALTER TABLE sys_config ADD COLUMN transactionType TEXT NOT NULL DEFAULT 'GASTO'`
+  ).run();
 }

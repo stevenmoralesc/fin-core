@@ -59,8 +59,15 @@ export interface SystemConfig {
   category: string;
   subcategory: string;
   suggestedBudget: number;
+  transactionType: "INGRESO" | "GASTO" | "TRANSFERENCIA";
   createdAt: string;
 }
+
+// Mapa de categorías agrupadas por tipo de transacción
+export type CategoriesByType = Record<
+  "INGRESO" | "GASTO" | "TRANSFERENCIA",
+  Record<string, { subcategory: string; suggestedBudget: number }[]>
+>;
 
 export interface DashboardSummary {
   liquidezTotal: number;

@@ -38,22 +38,30 @@ function getCreditCards(): CreditCard[] {
     .all() as CreditCard[];
 }
 
-function getCategories(): Record<string, { subcategory: string; suggestedBudget: number }[]> {
+function getCategories(): import("@/lib/types").CategoriesByType {
   const rows = db
     .prepare(
-      `SELECT category, subcategory, suggestedBudget FROM sys_config ORDER BY category, subcategory`
+      `SELECT category, subcategory, suggestedBudget, transactionType
+       FROM sys_config ORDER BY transactionType, category, subcategory`
     )
-    .all() as SystemConfig[];
+    .all() as import("@/lib/types").SystemConfig[];
 
-  const grouped: Record<string, { subcategory: string; suggestedBudget: number }[]> = {};
+  const result: import("@/lib/types").CategoriesByType = {
+    GASTO: {},
+    INGRESO: {},
+    TRANSFERENCIA: {},
+  };
+
   for (const row of rows) {
-    if (!grouped[row.category]) grouped[row.category] = [];
-    grouped[row.category].push({
+    const type = row.transactionType ?? "GASTO";
+    if (!result[type]) result[type as keyof typeof result] = {};
+    if (!result[type][row.category]) result[type][row.category] = [];
+    result[type][row.category].push({
       subcategory: row.subcategory,
       suggestedBudget: row.suggestedBudget,
     });
   }
-  return grouped;
+  return result;
 }
 
 export default async function RootLayout({

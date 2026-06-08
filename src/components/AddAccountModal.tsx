@@ -1,0 +1,147 @@
+"use client";
+
+import { useState } from "react";
+import { X, RefreshCw } from "lucide-react";
+
+interface AddAccountModalProps {
+  onClose: () => void;
+}
+
+export default function AddAccountModal({ onClose }: AddAccountModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    type: "AHORROS" as "EFECTIVO" | "AHORROS" | "CORRIENTE",
+    initialBalance: "",
+    currency: "COP",
+  });
+
+  const formatCOPInput = (val: string) => {
+    const num = val.replace(/\D/g, "");
+    if (!num) return "";
+    return "$" + parseInt(num, 10).toLocaleString("es-CO");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch("/api/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          type: form.type,
+          initialBalance: Number(form.initialBalance.replace(/\D/g, "")),
+          currency: form.currency,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? "Error");
+      }
+      onClose();
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputClass =
+    "w-full border-b border-gray-200 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-gray-800 transition-colors bg-transparent";
+  const labelClass =
+    "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
+      <div className="bg-white rounded-[24px] w-full max-w-[400px] shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
+          <h2 className="text-lg font-bold text-gray-900">Nueva Cuenta</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Nombre */}
+          <div>
+            <label className={labelClass}>Nombre de la Cuenta</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="Ej. Bancolombia Ahorros, Efectivo Billetera"
+              className={inputClass}
+              required
+            />
+          </div>
+
+          {/* Tipo */}
+          <div>
+            <label className={labelClass}>Tipo de Cuenta</label>
+            <div className="flex gap-2 mt-1.5">
+              {(["EFECTIVO", "AHORROS", "CORRIENTE"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, type: t }))}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors border ${
+                    form.type === t
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  {t === "EFECTIVO" ? "💵 Efectivo" : t === "AHORROS" ? "🏦 Ahorros" : "🏧 Corriente"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Saldo Inicial */}
+          <div>
+            <label className={labelClass}>Saldo Inicial</label>
+            <input
+              type="text"
+              value={form.initialBalance}
+              onChange={(e) => setForm((f) => ({ ...f, initialBalance: formatCOPInput(e.target.value) }))}
+              placeholder="$0"
+              className={inputClass}
+              required
+            />
+            <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
+              El saldo que tenías en esta cuenta antes de empezar a trackear.
+            </p>
+          </div>
+
+          {/* Moneda */}
+          <div>
+            <label className={labelClass}>Moneda</label>
+            <select
+              value={form.currency}
+              onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
+              className={inputClass}
+            >
+              <option value="COP">🇨🇴 COP — Peso Colombiano</option>
+              <option value="USD">🇺🇸 USD — Dólar Americano</option>
+              <option value="EUR">🇪🇺 EUR — Euro</option>
+            </select>
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 bg-black hover:bg-gray-900 text-white py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-sm disabled:opacity-70"
+            >
+              {loading ? <RefreshCw size={18} className="animate-spin" /> : "Crear Cuenta"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

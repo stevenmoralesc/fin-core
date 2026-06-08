@@ -5,9 +5,18 @@
 
 import { db } from "@/lib/db";
 import CreditCardView from "@/components/CreditCardView";
-import type { CreditCard, InstallmentPurchase, CreditCardDetails } from "@/lib/types";
+import type { Account, CreditCard, InstallmentPurchase, CreditCardDetails } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+function getAccounts(): Account[] {
+  return db
+    .prepare(
+      `SELECT id, name, type, initialBalance, currency, status, createdAt, updatedAt
+       FROM dim_cuentas WHERE status = 'ACTIVA' ORDER BY type, name`
+    )
+    .all() as Account[];
+}
 
 function getCreditCardDetails(): CreditCardDetails[] {
   const cards = db
@@ -18,7 +27,6 @@ function getCreditCardDetails(): CreditCardDetails[] {
     .all() as CreditCard[];
 
   return cards.map((card) => {
-    // Obtener las compras diferidas para esta tarjeta
     const installments = db
       .prepare(
         `SELECT id, purchaseDate, establishment, totalAmount, totalMonths, paidMonths,
@@ -29,17 +37,20 @@ function getCreditCardDetails(): CreditCardDetails[] {
       )
       .all(card.id) as InstallmentPurchase[];
 
-    // Calcular KPIs
     let usedLimit = 0;
     let nextBillAmount = 0;
 
     for (const inst of installments) {
       if (inst.status === "VIGENTE") {
-        const remainingMonths = inst.totalMonths - inst.paidMonths;
-        const monthlyAmount = inst.totalAmount / inst.totalMonths; // lineal simple
-        
-        usedLimit += monthlyAmount * remainingMonths;
-        nextBillAmount += monthlyAmount;
+        const remaining = inst.totalMonths - inst.paidMonths;
+        const monthly =
+          inst.monthlyInterest > 0
+            ? (inst.totalAmount * (inst.monthlyInterest / 100)) /
+              (1 - Math.pow(1 + inst.monthlyInterest / 100, -inst.totalMonths))
+            : inst.totalAmount / inst.totalMonths;
+
+        usedLimit += monthly * remaining;
+        nextBillAmount += monthly;
       }
     }
 
@@ -57,8 +68,11 @@ function getCreditCardDetails(): CreditCardDetails[] {
 }
 
 export default async function TarjetasPage() {
-  const details = await Promise.resolve(getCreditCardDetails());
-  
+  const [details, accounts] = await Promise.all([
+    Promise.resolve(getCreditCardDetails()),
+    Promise.resolve(getAccounts()),
+  ]);
+
   if (details.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-16 text-center">
@@ -70,5 +84,6 @@ export default async function TarjetasPage() {
     );
   }
 
-  return <CreditCardView initialData={details} />;
+  return <CreditCardView initialData={details} accounts={accounts} />;
 }
+

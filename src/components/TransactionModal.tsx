@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { RefreshCw, X } from "lucide-react";
-import type { Account, CreditCard as CreditCardType } from "@/lib/types";
+import type { Account, CreditCard as CreditCardType, CategoriesByType } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 interface ModalProps {
   accounts: Account[];
   creditCards: CreditCardType[];
-  categories: Record<string, { subcategory: string }[]>;
+  categories: CategoriesByType;
   onClose: () => void;
 }
 
@@ -28,7 +28,9 @@ export default function TransactionModal({ accounts, creditCards, categories, on
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const subcategories = form.category ? (categories[form.category] ?? []) : [];
+  // Categorías filtradas según el tipo de transacción seleccionado
+  const categoriesForType = categories[form.type] ?? {};
+  const subcategories = form.category ? (categoriesForType[form.category] ?? []) : [];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -197,9 +199,13 @@ export default function TransactionModal({ accounts, creditCards, categories, on
                 className={inputClass}
               >
                 <option value="">Selecciona...</option>
-                {Object.keys(categories).map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
+                {Object.keys(categoriesForType).length === 0 ? (
+                  <option disabled value="">Sin categorías para este tipo</option>
+                ) : (
+                  Object.keys(categoriesForType).map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))
+                )}
               </select>
             </div>
             <div>

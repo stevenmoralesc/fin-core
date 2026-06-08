@@ -92,9 +92,13 @@ async function getDashboardData(): Promise<DashboardSummary> {
   // Transacciones
   const txs = db
     .prepare(
-      `SELECT id, type, date, amount, category, subcategory, description, accountId, debtReferenceId
-       FROM fact_transacciones
-       ORDER BY date DESC LIMIT 7`
+      `SELECT t.id, t.type, t.date, t.amount, t.category, t.subcategory, t.description, t.accountId, t.debtReferenceId,
+              COALESCE(c.name, tc.name) AS paymentMethodName
+       FROM fact_transacciones t
+       LEFT JOIN dim_cuentas c ON t.accountId = c.id
+       LEFT JOIN fact_compras_cuotas fcc ON t.debtReferenceId = fcc.id
+       LEFT JOIN dim_tarjetas_credito tc ON fcc.creditCardId = tc.id
+       ORDER BY t.date DESC LIMIT 7`
     )
     .all() as DashboardSummary["recentTransactions"];
 
@@ -122,7 +126,23 @@ async function getDashboardData(): Promise<DashboardSummary> {
 }
 
 export default async function HomePage() {
-  const summary = await getDashboardData();
+  const [summary, categories] = await Promise.all([
+    Promise.resolve(getDashboardData()),
+    Promise.resolve(
+      (() => {
+        const rows = db
+          .prepare(`SELECT category, subcategory, suggestedBudget, transactionType FROM sys_config ORDER BY transactionType, category, subcategory`)
+          .all() as import("@/lib/types").SystemConfig[];
+        const result: import("@/lib/types").CategoriesByType = { GASTO: {}, INGRESO: {}, TRANSFERENCIA: {} };
+        for (const row of rows) {
+          const t = row.transactionType ?? "GASTO";
+          if (!result[t][row.category]) result[t][row.category] = [];
+          result[t][row.category].push({ subcategory: row.subcategory, suggestedBudget: row.suggestedBudget });
+        }
+        return result;
+      })()
+    ),
+  ]);
 
-  return <Dashboard initialData={summary} />;
+  return <Dashboard initialData={summary} categories={categories} />;
 }

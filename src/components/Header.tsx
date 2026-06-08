@@ -2,12 +2,12 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import TransactionModal from "./TransactionModal";
-import type { Account, CreditCard, SystemConfig } from "@/lib/types";
+import type { Account, CreditCard, CategoriesByType } from "@/lib/types";
 
 interface HeaderProps {
   accounts: Account[];
   creditCards: CreditCard[];
-  categories: Record<string, { subcategory: string; suggestedBudget: number }[]>;
+  categories: CategoriesByType;
 }
 
 export default function Header({ accounts, creditCards, categories }: HeaderProps) {

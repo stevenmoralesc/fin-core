@@ -19,8 +19,9 @@ export async function GET(req: NextRequest) {
       targetMonth = now.getMonth() + 1; // 1-12
     }
     
-    const startDate = new Date(targetYear, targetMonth - 1, 1).toISOString();
-    const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59, 999).toISOString();
+    const startDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-01`;
+    const lastDay = new Date(targetYear, targetMonth, 0).getDate();
+    const endDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
     
     // 1. Liquidez (up to endDate)
     const rowLiquidez = db.prepare(`
@@ -34,13 +35,34 @@ export async function GET(req: NextRequest) {
     `).get(endDate) as { total: number | null };
     const totalLiquidity = rowLiquidez.total || 0;
 
-    // 2. Gastos Corrientes (strictly within the period)
-    const rowGastos = db.prepare(`
-      SELECT SUM(amount) as total
-      FROM fact_transacciones
-      WHERE type = 'GASTO' AND date >= ? AND date <= ?
-    `).get(startDate, endDate) as { total: number | null };
-    const expenses = rowGastos.total || 0;
+    // 2. Gastos Corrientes (strictly within the period + active installments)
+    const expenseRows = db.prepare(`
+      SELECT t.amount, t.debtReferenceId, c.totalAmount, c.totalMonths, c.monthlyInterest, c.status
+      FROM fact_transacciones t
+      LEFT JOIN fact_compras_cuotas c ON t.debtReferenceId = c.id
+      WHERE t.type = 'GASTO' 
+        AND (
+          (t.debtReferenceId IS NULL AND t.date >= ? AND t.date <= ?)
+          OR 
+          (t.debtReferenceId IS NOT NULL AND c.status = 'VIGENTE' AND t.date <= ?)
+        )
+    `).all(startDate, endDate, endDate) as any[];
+
+    let expenses = 0;
+    for (const row of expenseRows) {
+      if (row.debtReferenceId && row.status === 'VIGENTE') {
+        const interest = row.monthlyInterest || 0;
+        if (interest > 0) {
+          const r = interest / 100;
+          const n = row.totalMonths;
+          expenses += (row.totalAmount * r) / (1 - Math.pow(1 + r, -n));
+        } else {
+          expenses += row.totalAmount / row.totalMonths;
+        }
+      } else if (!row.debtReferenceId) {
+        expenses += row.amount;
+      }
+    }
 
     // 3. Cupo Utilizado TC (using CreditCardStatement if exists, else fallback)
     const cards = db.prepare(`SELECT id, totalLimit FROM dim_tarjetas_credito`).all() as { id: string, totalLimit: number }[];
@@ -90,7 +112,7 @@ export async function GET(req: NextRequest) {
 
     // 4. Transacciones recientes del periodo
     const txs = db.prepare(`
-      SELECT t.id, t.type, t.date, t.amount, t.category, t.subcategory, t.description, t.accountId, t.debtReferenceId,
+      SELECT t.id, t.type, t.date, t.amount, t.category, t.description, t.accountId, t.debtReferenceId,
              COALESCE(c.name, tc.name) AS paymentMethodName
       FROM fact_transacciones t
       LEFT JOIN dim_cuentas c ON t.accountId = c.id

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Transaction, CategoriesByType } from "@/lib/types";
 
 interface EditTransactionModalProps {
-  transaction: Pick<Transaction, "id" | "date" | "type" | "amount" | "category" | "subcategory" | "description">;
+  transaction: Pick<Transaction, "id" | "date" | "type" | "amount" | "category" | "description">;
   categories: CategoriesByType;
   onClose: () => void;
   onSuccess?: () => void;
@@ -26,14 +26,12 @@ export default function EditTransactionModal({
   const [form, setForm] = useState({
     type: transaction.type,
     category: transaction.category,
-    subcategory: transaction.subcategory,
     amount: String(transaction.amount),
     description: transaction.description ?? "",
     date: transaction.date.split("T")[0],
   });
 
   const categoriesForType = categories[form.type] ?? {};
-  const subcategories = form.category ? (categoriesForType[form.category] ?? []) : [];
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +75,7 @@ export default function EditTransactionModal({
     "w-full border-b py-2.5 text-sm focus:outline-none transition-colors bg-transparent";
   const inputStyle = { color: "var(--text-primary)", borderColor: "var(--border)" };
   const labelClass =
-    "block text-[10px] font-bold uppercase tracking-widest mb-1";
+    "block text-[10px] leading-none font-bold uppercase tracking-wide mb-1";
   const labelStyle = { color: "var(--text-muted)" };
 
   return (
@@ -108,11 +106,11 @@ export default function EditTransactionModal({
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setForm((f) => ({ ...f, type: t, category: "", subcategory: "" }))}
+                  onClick={() => setForm((f) => ({ ...f, type: t, category: "" }))}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors border ${
                     form.type === t
                       ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                      : "bg-surface text-secondary border-base hover:border-gray-300"
                   }`}
                 >
                   {t === "GASTO" ? "Gasto" : t === "INGRESO" ? "Ingreso" : "Transf."}
@@ -138,7 +136,7 @@ export default function EditTransactionModal({
               <input
                 type="number"
                 min="0"
-                step="100"
+                step="0.01"
                 value={form.amount}
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
                 className={inputClass}
@@ -148,40 +146,23 @@ export default function EditTransactionModal({
           </div>
 
           {/* Categoría */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Categoría</label>
-              <select
-                value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subcategory: "" }))}
-                className={inputClass}
-                required
-              >
-                <option value="">Selecciona...</option>
-                {Object.keys(categoriesForType).length === 0 ? (
-                  <option disabled>Sin categorías para este tipo</option>
-                ) : (
-                  Object.keys(categoriesForType).map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))
-                )}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Subcategoría</label>
-              <select
-                value={form.subcategory}
-                onChange={(e) => setForm((f) => ({ ...f, subcategory: e.target.value }))}
-                disabled={!form.category}
-                className={`${inputClass} disabled:opacity-50`}
-                required
-              >
-                <option value="">Selecciona...</option>
-                {subcategories.map((s) => (
-                  <option key={s.subcategory} value={s.subcategory}>{s.subcategory}</option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className={labelClass}>Categoría</label>
+            <select
+              value={form.category}
+              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+              className={inputClass}
+              required
+            >
+              <option value="">Selecciona...</option>
+              {Object.keys(categoriesForType).length === 0 ? (
+                <option disabled>Sin categorías para este tipo</option>
+              ) : (
+                Object.keys(categoriesForType).map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))
+              )}
+            </select>
           </div>
 
           {/* Descripción */}
@@ -201,7 +182,7 @@ export default function EditTransactionModal({
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              className="w-10 h-[46px] flex items-center justify-center rounded-xl border border-gray-200 hover:bg-red-50 hover:border-red-200 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+              className="w-10 h-[46px] flex items-center justify-center rounded-xl border border-base hover:bg-red-50 hover:border-red-200 text-muted hover:text-red-500 transition-colors shrink-0"
             >
               <Trash2 size={16} />
             </button>
@@ -219,18 +200,18 @@ export default function EditTransactionModal({
       {/* Confirm delete overlay */}
       {confirmDelete && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-gray-900/60">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
+          <div className="bg-surface rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
             <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Trash2 size={22} className="text-red-500" />
             </div>
-            <h3 className="text-base font-bold text-gray-900 mb-1">¿Eliminar transacción?</h3>
-            <p className="text-sm text-gray-500 mb-5">
+            <h3 className="text-base font-bold text-primary mb-1">¿Eliminar transacción?</h3>
+            <p className="text-sm text-secondary mb-5">
               Esta acción es permanente y afectará el saldo de la cuenta.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                className="flex-1 py-2.5 rounded-xl border border-base text-sm font-semibold text-gray-600 hover:bg-surface-2"
               >
                 Cancelar
               </button>

@@ -31,7 +31,7 @@ export interface Transaction {
   date: string;
   type: "INGRESO" | "GASTO" | "TRANSFERENCIA";
   category: string;
-  subcategory: string;
+
   amount: number;
   description: string | null;
   accountId: string | null;
@@ -58,7 +58,7 @@ export interface InstallmentPurchase {
 export interface SystemConfig {
   id: number;
   category: string;
-  subcategory: string;
+  icon?: string | null;
   suggestedBudget: number;
   transactionType: "INGRESO" | "GASTO" | "TRANSFERENCIA";
   createdAt: string;
@@ -67,7 +67,7 @@ export interface SystemConfig {
 // Mapa de categorías agrupadas por tipo de transacción
 export type CategoriesByType = Record<
   "INGRESO" | "GASTO" | "TRANSFERENCIA",
-  Record<string, { subcategory: string; suggestedBudget: number }[]>
+  Record<string, { suggestedBudget: number; icon?: string | null }[]>
 >;
 
 export interface DashboardSummary {
@@ -84,7 +84,7 @@ export interface TransactionCreate {
   date?: string;
   type: "INGRESO" | "GASTO" | "TRANSFERENCIA";
   category: string;
-  subcategory: string;
+
   amount: number;
   description?: string | null;
   paymentMethodId: string;    // ID de la cuenta o tarjeta

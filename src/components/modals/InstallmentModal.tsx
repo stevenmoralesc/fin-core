@@ -19,13 +19,15 @@ export default function InstallmentModal({ onClose, cards, preselectedCardId }: 
     establishment: "",
     totalAmount: "",
     totalMonths: "1",
-    purchaseDate: new Date().toISOString().split("T")[0],
+    purchaseDate: (() => {
+      const d = new Date();
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+    })(),
     monthlyInterest: "0",
     category: "Consumo",
-    subcategory: "Compra TC",
   });
 
-  const totalAmountNum = Number(form.totalAmount.replace(/\D/g, "")) || 0;
+  const totalAmountNum = Number(form.totalAmount) || 0;
   const totalMonthsNum = Number(form.totalMonths) || 1;
   const interest = Number(form.monthlyInterest) || 0;
 
@@ -34,12 +36,7 @@ export default function InstallmentModal({ onClose, cards, preselectedCardId }: 
     ? totalAmountNum * (interest / 100) / (1 - Math.pow(1 + interest / 100, -totalMonthsNum))
     : totalAmountNum / totalMonthsNum;
 
-  const formatCOP = (v: number) => "$" + Math.round(v).toLocaleString("es-CO");
-  const formatCOPInput = (val: string) => {
-    const num = val.replace(/\D/g, "");
-    if (!num) return "";
-    return "$" + parseInt(num, 10).toLocaleString("es-CO");
-  };
+  const formatCOP = (v: number) => "$" + Number(v).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +49,7 @@ export default function InstallmentModal({ onClose, cards, preselectedCardId }: 
         body: JSON.stringify({
           type: "GASTO",
           category: form.category,
-          subcategory: form.subcategory,
+
           amount: totalAmountNum,
           description: form.establishment,
           paymentMethodId: form.creditCardId,
@@ -78,24 +75,24 @@ export default function InstallmentModal({ onClose, cards, preselectedCardId }: 
   };
 
   const inputClass =
-    "w-full border-b border-gray-200 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-gray-800 transition-colors bg-transparent";
+    "w-full border-b border-base py-2.5 text-primary text-sm focus:outline-none focus:border-gray-800 transition-colors bg-transparent";
   const labelClass =
-    "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1";
+    "block text-[10px] leading-none font-bold text-muted uppercase tracking-wide mb-1";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-      <div className="bg-white rounded-[24px] w-full max-w-[480px] shadow-2xl overflow-hidden">
+      <div className="bg-surface rounded-[24px] w-full max-w-[480px] shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center">
               <CreditCard size={18} className="text-white" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Nueva Compra Diferida</h2>
+            <h2 className="text-lg font-bold text-primary">Nueva Compra Diferida</h2>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-3 text-muted transition-colors"
           >
             <X size={20} />
           </button>
@@ -149,10 +146,11 @@ export default function InstallmentModal({ onClose, cards, preselectedCardId }: 
             <div>
               <label className={labelClass}>Valor Total</label>
               <input
-                type="text"
+                type="number"
+              step="0.01"
                 value={form.totalAmount}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, totalAmount: formatCOPInput(e.target.value) }))
+                  setForm((f) => ({ ...f, totalAmount: e.target.value }))
                 }
                 placeholder="$0"
                 className={inputClass}
@@ -191,16 +189,16 @@ export default function InstallmentModal({ onClose, cards, preselectedCardId }: 
 
           {/* Resumen de cuota calculada */}
           {totalAmountNum > 0 && (
-            <div className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
+            <div className="bg-surface-2 rounded-xl px-4 py-3 flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-500 font-medium">Cuota mensual estimada</p>
+                <p className="text-xs text-secondary font-medium">Cuota mensual estimada</p>
                 {interest > 0 && (
-                  <p className="text-[10px] text-gray-400 mt-0.5">
+                  <p className="text-[10px] text-muted mt-0.5">
                     Con interés del {interest}% mensual
                   </p>
                 )}
               </div>
-              <p className="text-lg font-bold text-gray-900">{formatCOP(monthlyQuota)}</p>
+              <p className="text-lg font-bold text-primary">{formatCOP(monthlyQuota)}</p>
             </div>
           )}
 

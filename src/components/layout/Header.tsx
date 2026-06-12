@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import TransactionModal from "./TransactionModal";
+import TransactionModal from "@/components/modals/TransactionModal";
 import type { Account, CreditCard, CategoriesByType } from "@/lib/types";
 
 interface HeaderProps {
@@ -28,10 +28,10 @@ export default function Header({ accounts, creditCards, categories }: HeaderProp
 
   return (
     <>
-      <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between shrink-0">
+      <header className="bg-surface border-b border-subtle px-6 py-4 flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-base font-bold text-gray-900">{title}</h1>
-          <p className="text-xs text-gray-400 mt-0.5 capitalize">{today}</p>
+          <h1 className="text-base font-bold text-primary">{title}</h1>
+          <p className="text-xs text-muted mt-0.5 capitalize">{today}</p>
         </div>
         <div className="flex items-center gap-4">
           <button

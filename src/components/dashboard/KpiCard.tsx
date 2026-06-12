@@ -41,17 +41,17 @@ export default function KpiCard({
 
   return (
     <div 
-      className="group bg-white p-6 rounded-2xl border border-gray-100/80 shadow-sm flex flex-col justify-between min-h-[140px] gap-3 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
-      style={{ borderTopWidth: '3px', borderTopColor: accentColor }}
+      className="group p-6 rounded-2xl border flex flex-col justify-between min-h-[140px] gap-3 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+      style={{ background: "var(--bg-surface)", borderRightColor: "var(--border)", borderBottomColor: "var(--border)", borderLeftColor: "var(--border)", borderTopWidth: '3px', borderTopColor: accentColor, boxShadow: "var(--shadow-sm)" }}
     >
       {/* Header row */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+          <p className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
             {title}
           </p>
           {subtitle && (
-            <p className="text-[11px] text-gray-400 font-medium tracking-wide">{subtitle}</p>
+            <p className="text-[11px] font-medium tracking-wide" style={{ color: "var(--text-secondary)" }}>{subtitle}</p>
           )}
         </div>
         <div
@@ -64,7 +64,7 @@ export default function KpiCard({
 
       {/* Value */}
       <div>
-        <span className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+        <span className="text-2xl md:text-3xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
           {value}
         </span>
       </div>
@@ -78,13 +78,12 @@ export default function KpiCard({
             <TrendingDown size={14} className="text-red-500" />
           )}
           <span
-            className={`text-xs font-semibold ${
-              trend.positive ? "text-emerald-600" : "text-red-500"
-            }`}
+            className="text-xs font-semibold"
+            style={{ color: trend.positive ? "var(--success)" : "var(--danger)" }}
           >
             {trend.value}
           </span>
-          <span className="text-xs font-medium text-gray-400">{trend.label}</span>
+          <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{trend.label}</span>
         </div>
       )}
     </div>

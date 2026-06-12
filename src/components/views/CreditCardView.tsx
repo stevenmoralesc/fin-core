@@ -12,23 +12,21 @@ import {
   CalendarCheck,
   Receipt,
 } from "lucide-react";
-import KpiCard from "@/components/KpiCard";
-import InstallmentModal from "@/components/InstallmentModal";
-import BillPaymentModal from "@/components/BillPaymentModal";
-import AddCreditCardModal from "@/components/AddCreditCardModal";
-import EditCreditCardModal from "@/components/EditCreditCardModal";
+import KpiCard from "@/components/dashboard/KpiCard";
+import InstallmentModal from "@/components/modals/InstallmentModal";
+import BillPaymentModal from "@/components/modals/BillPaymentModal";
+import AddCreditCardModal from "@/components/modals/AddCreditCardModal";
+import EditCreditCardModal from "@/components/modals/EditCreditCardModal";
 import type { Account, CreditCardDetails } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
 
 // ── Helpers ───────────────────────────────────────────────────
 function formatCOP(value: number): string {
-  return "$" + Math.round(value).toLocaleString("es-CO");
+  return "$" + Number(value).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function formatCOPShort(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
-  return `$${value.toLocaleString("es-CO")}`;
+  return formatCOP(value);
 }
 
 interface CreditCardViewProps {
@@ -46,28 +44,33 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
   const [editCardOpen, setEditCardOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  if (!initialData || initialData.length === 0) {
+  if (initialData.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-          <CreditCard size={28} className="text-gray-300" />
+      <div className="p-6 md:p-10 space-y-8 max-w-7xl mx-auto">
+        <div className="flex flex-col items-center justify-center py-24 text-center border rounded-2xl shadow-sm" style={{ borderColor: "var(--border)", background: "var(--bg-surface)" }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: "var(--bg-surface-2)" }}>
+            <span className="text-3xl">💳</span>
+          </div>
+          <h2 className="text-xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>No hay tarjetas registradas</h2>
+          <p className="text-sm max-w-sm mb-6" style={{ color: "var(--text-muted)" }}>
+            Aún no tienes tarjetas de crédito. Agrega tu primera tarjeta para empezar a trackear tus compras y cuotas.
+          </p>
+          <button
+            onClick={() => setAddCardOpen(true)}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+            style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
+          >
+            <Plus size={18} />
+            Agregar primera tarjeta
+          </button>
         </div>
-        <p className="text-sm font-bold text-gray-900 mb-1">No hay tarjetas registradas</p>
-        <p className="text-xs text-gray-400 mb-6 max-w-sm">
-          Añade tu primera tarjeta de crédito para empezar a gestionar tus compras a cuotas.
-        </p>
-        <button
-          onClick={() => setAddCardOpen(true)}
-          className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-5 py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm"
-        >
-          <Plus size={18} />
-          Añadir Tarjeta
-        </button>
-
-        {addCardOpen && <AddCreditCardModal onClose={() => setAddCardOpen(false)} />}
+        {addCardOpen && (
+          <AddCreditCardModal onClose={() => { setAddCardOpen(false); router.refresh(); }} />
+        )}
       </div>
     );
   }
+
 
   const data = initialData[selectedIndex] || initialData[0];
   const { card, stats, installments } = data;
@@ -125,27 +128,30 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
   return (
     <div className="p-6 md:p-10 space-y-8 max-w-7xl mx-auto">
       {/* ── Selector de Tarjetas ── */}
-      <div className="flex gap-2 overflow-x-auto pb-1 items-center">
+      <div className="flex gap-2 overflow-x-auto py-2 -my-2 items-center">
         {initialData.map((d, index) => (
           <button
             key={d.card.id}
             onClick={() => setSelectedIndex(index)}
-            className={`flex items-center gap-2 border rounded-xl px-4 py-2.5 shrink-0 shadow-sm transition-colors ${
-              index === selectedIndex
-                ? "bg-gray-900 border-gray-900 text-white"
-                : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
-            }`}
+            className="flex items-center gap-2 border rounded-xl px-4 py-2.5 shrink-0 shadow-sm transition-colors"
+            style={index === selectedIndex
+              ? { background: "var(--bg-surface-3)", borderColor: "var(--border)", color: "var(--text-primary)" }
+              : { background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-secondary)" }
+            }
           >
             <CreditCard
               size={16}
-              className={index === selectedIndex ? "text-gray-300" : "text-gray-400"}
+              style={{ color: index === selectedIndex ? "var(--text-primary)" : "var(--text-muted)" }}
             />
             <span className="text-sm font-semibold">{d.card.name}</span>
           </button>
         ))}
         <button
           onClick={() => setAddCardOpen(true)}
-          className="flex items-center justify-center w-10 h-10 border border-dashed border-gray-300 rounded-xl text-gray-400 hover:text-gray-600 hover:border-gray-400 hover:bg-gray-50 transition-colors shrink-0"
+          className="flex items-center justify-center w-10 h-10 border border-dashed rounded-xl transition-colors shrink-0"
+          style={{ borderColor: "var(--text-placeholder)", color: "var(--text-muted)" }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.borderColor = "var(--text-secondary)"; e.currentTarget.style.background = "var(--bg-surface-2)" }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--text-placeholder)"; e.currentTarget.style.background = "transparent" }}
           title="Añadir nueva tarjeta"
         >
           <Plus size={18} />
@@ -155,20 +161,23 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
       {/* ── Encabezado de la tarjeta actual ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center shadow-sm">
-            <CreditCard size={20} className="text-white" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ background: "var(--accent)" }}>
+            <CreditCard size={20} style={{ color: "var(--accent-fg)" }} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-gray-900 leading-tight">{card.name}</h2>
+              <h2 className="text-lg font-bold leading-tight" style={{ color: "var(--text-primary)" }}>{card.name}</h2>
               <button 
                 onClick={() => setEditCardOpen(true)}
-                className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-1 rounded-md transition-colors"
+                className="p-1 rounded-md transition-colors"
+                style={{ color: "var(--text-muted)" }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-surface-2)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
               >
                 <Settings size={14} />
               </button>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">
+            <p className="text-xs font-medium mt-0.5" style={{ color: "var(--text-secondary)" }}>
               {card.bank} · Corte: día {card.closingDay} · Pago: día {card.paymentDay}
             </p>
           </div>
@@ -177,14 +186,16 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
           <button
             onClick={() => setPayModalOpen(true)}
             disabled={stats.nextBillAmount === 0}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+            className="flex items-center gap-2 disabled:opacity-40 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+            style={{ background: "#4f46e5", color: "white" }}
           >
             <Receipt size={16} />
             Pagar Factura
           </button>
           <button
             onClick={() => setModalOpen(true)}
-            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+            style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
           >
             <Plus size={16} />
             Nueva Compra
@@ -201,26 +212,27 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
 
       {/* ── Tabla Vigentes ── */}
       <div
-        className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm"
+        className="rounded-2xl border overflow-hidden shadow-sm"
+        style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
+        <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: "var(--border-subtle)" }}>
           <div>
-            <h2 className="text-sm font-bold text-gray-900">Compras Vigentes</h2>
-            <p className="text-xs text-gray-400 mt-0.5 tracking-wide">
+            <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Compras Vigentes</h2>
+            <p className="text-xs mt-0.5 tracking-wide" style={{ color: "var(--text-muted)" }}>
               {vigentes.length === 0 ? "Sin compras activas" : `${vigentes.length} compra${vigentes.length > 1 ? "s" : ""} en cuotas`}
             </p>
           </div>
-          <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
+          <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ color: "#4f46e5", background: "rgba(79, 70, 229, 0.1)" }}>
             {vigentes.length} activas
           </span>
         </div>
 
         {vigentes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-surface-2 flex items-center justify-center mb-3">
               <ShoppingBag size={20} className="text-gray-300" />
             </div>
-            <p className="text-sm font-medium text-gray-400">No hay compras diferidas</p>
+            <p className="text-sm font-medium text-muted">No hay compras diferidas</p>
             <p className="text-xs text-gray-300 mt-1">
               Haz clic en "Nueva Compra Diferida" para registrar
             </p>
@@ -228,7 +240,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
         ) : (
           <div className="flex flex-col">
             {/* Table Header */}
-            <div className="grid grid-cols-7 gap-4 bg-gray-50/60 border-b border-gray-100 text-[10px] uppercase tracking-wider font-bold text-gray-400 px-6 py-3">
+            <div className="grid grid-cols-7 gap-4 bg-surface-2/60 border-b border-subtle text-[10px] leading-none uppercase tracking-wide font-bold text-muted px-6 py-3">
               <div className="col-span-2">Establecimiento</div>
               <div>Fecha</div>
               <div className="text-center">Progreso</div>
@@ -245,15 +257,15 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
                 const remaining = inst.totalMonths - inst.paidMonths;
 
                 return (
-                  <div key={inst.id} className="grid grid-cols-7 gap-4 items-center px-6 py-5 hover:bg-gray-50/50 transition-colors group">
+                  <div key={inst.id} className="grid grid-cols-7 gap-4 items-center px-6 py-5 hover:bg-surface-2/50 transition-colors group">
                     <div className="col-span-2">
-                      <p className="font-semibold text-gray-800 truncate">{inst.establishment}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="font-semibold text-primary truncate">{inst.establishment}</p>
+                      <p className="text-xs text-muted mt-0.5">
                         {remaining} {remaining === 1 ? "cuota restante" : "cuotas restantes"}
                       </p>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(inst.purchaseDate).toLocaleDateString("es-CO", {
+                    <div className="text-xs text-secondary">
+                      {new Date(inst.purchaseDate.length === 10 ? inst.purchaseDate + 'T12:00:00' : inst.purchaseDate).toLocaleDateString("es-CO", {
                         day: "2-digit",
                         month: "short",
                         year: "numeric",
@@ -263,7 +275,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
                       <span className="text-xs font-bold text-gray-700">
                         {inst.paidMonths}/{inst.totalMonths}
                       </span>
-                      <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="w-24 h-1.5 bg-surface-3 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-indigo-500 rounded-full transition-all duration-500"
                           style={{ width: `${pct}%` }}
@@ -273,7 +285,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
                     <div className="text-right font-medium text-gray-700">
                       {formatCOP(inst.totalAmount)}
                     </div>
-                    <div className="text-right font-bold text-gray-900">
+                    <div className="text-right font-bold text-primary">
                       {formatCOP(monthly)}
                     </div>
                     <div className="flex items-center justify-center gap-2 opacity-100 sm:opacity-60 group-hover:opacity-100 transition-opacity">
@@ -289,7 +301,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
                       <button
                         onClick={() => setConfirmDeleteId(inst.id)}
                         title="Eliminar esta compra"
-                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-3 text-muted hover:text-black transition-colors"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -305,35 +317,38 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
        {/* ── Historial Amortizadas ── */}
       {amortizadas.length > 0 && (
         <div
-          className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm"
+          className="rounded-2xl border overflow-hidden shadow-sm"
+          style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
         >
-          <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-gray-900">Historial Pagado</h2>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg flex items-center gap-1">
+          <div className="px-6 py-5 border-b flex items-center justify-between" style={{ borderColor: "var(--border-subtle)" }}>
+            <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Historial Pagado</h2>
+            <span className="text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1" style={{ color: "var(--success)", background: "var(--success-bg)" }}>
               <CheckCircle2 size={11} /> {amortizadas.length} amortizadas
             </span>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
             {amortizadas.map((inst) => (
               <div
                 key={inst.id}
-                className="px-6 py-4 flex items-center justify-between opacity-70 hover:opacity-100 hover:bg-gray-50/50 transition-all"
+                className="px-6 py-4 flex items-center justify-between opacity-70 hover:opacity-100 transition-all"
+                onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-surface-2)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-700">{inst.establishment}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{inst.establishment}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                     {inst.totalMonths} cuotas ·{" "}
-                    {new Date(inst.purchaseDate).toLocaleDateString("es-CO", {
+                    {new Date(inst.purchaseDate.length === 10 ? inst.purchaseDate + 'T12:00:00' : inst.purchaseDate).toLocaleDateString("es-CO", {
                       month: "short",
                       year: "numeric",
                     })}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-gray-500">
+                  <span className="text-sm font-bold" style={{ color: "var(--text-secondary)" }}>
                     {formatCOP(inst.totalAmount)}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
+                  <span className="text-[10px] leading-none font-bold uppercase tracking-wide px-2.5 py-1 rounded-md" style={{ color: "var(--success)", background: "var(--success-bg)" }}>
                     Pagada
                   </span>
                 </div>
@@ -346,14 +361,15 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
       {/* Modals */}
       {modalOpen && (
         <InstallmentModal
-          creditCardId={card.id}
+          cards={allCards}
+          preselectedCardId={card.id}
           onClose={() => setModalOpen(false)}
         />
       )}
       {payModalOpen && (
         <BillPaymentModal
           card={card}
-          stats={stats}
+          billAmount={stats.nextBillAmount}
           accounts={accounts}
           onClose={() => setPayModalOpen(false)}
         />
@@ -361,18 +377,18 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
       {/* Confirm Delete */}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-          <div className="bg-white rounded-[24px] max-w-sm w-full p-6 text-center shadow-2xl">
+          <div className="bg-surface rounded-[24px] max-w-sm w-full p-6 text-center shadow-2xl">
             <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Trash2 size={24} className="text-red-500" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">¿Eliminar compra?</h3>
-            <p className="text-sm text-gray-500 mb-6">
+            <h3 className="text-lg font-bold text-primary mb-2">¿Eliminar compra?</h3>
+            <p className="text-sm text-secondary mb-6">
               Esta acción eliminará el registro de cuotas y recalculará el cupo de tu tarjeta. No se puede deshacer.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDeleteId(null)}
-                className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 rounded-xl border border-base text-sm font-semibold text-gray-600 hover:bg-surface-2 transition-colors"
               >
                 Cancelar
               </button>

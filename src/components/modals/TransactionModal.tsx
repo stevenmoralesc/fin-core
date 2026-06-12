@@ -45,13 +45,15 @@ export default function TransactionModal({ accounts, creditCards, categories, on
   const [form, setForm] = useState({
     type: "GASTO" as "INGRESO" | "GASTO" | "TRANSFERENCIA",
     category: "",
-    subcategory: "",
     amount: "",
     description: "",
     tags: "",
     paymentMethod: accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : "",
     installments: "1",
-    date: new Date().toISOString().slice(0, 10),
+    date: (() => {
+      const d = new Date();
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+    })(),
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -62,11 +64,7 @@ export default function TransactionModal({ accounts, creditCards, categories, on
   useEffect(() => { amountRef.current?.focus(); }, []);
 
   const categoriesForType = categories[form.type] ?? {};
-  const flatCategories = Object.entries(categoriesForType).map(([cat, subs]) => ({
-    cat,
-    firstSub: subs[0]?.subcategory ?? cat,
-    allSubs: subs.map((s) => s.subcategory),
-  }));
+  const flatCategories = Object.keys(categoriesForType);
 
   function setType(t: "INGRESO" | "GASTO" | "TRANSFERENCIA") {
     setForm((f) => {
@@ -74,17 +72,17 @@ export default function TransactionModal({ accounts, creditCards, categories, on
       if (t !== "GASTO" && pm.startsWith("CREDIT_CARD")) {
         pm = accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : "";
       }
-      return { ...f, type: t, category: "", subcategory: "", paymentMethod: pm };
+      return { ...f, type: t, category: "", paymentMethod: pm };
     });
   }
 
-  function selectCategory(cat: string, sub: string) {
-    setForm((f) => ({ ...f, category: cat, subcategory: sub }));
+  function selectCategory(cat: string) {
+    setForm((f) => ({ ...f, category: cat }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.category || !form.subcategory || !form.amount) {
+    if (!form.category || !form.amount) {
       setError("Elige una categoría e ingresa el monto.");
       return;
     }
@@ -104,7 +102,7 @@ export default function TransactionModal({ accounts, creditCards, categories, on
           paymentMethodId,
           paymentMethodType,
           installments: parseInt(form.installments || "1"),
-          date: new Date(form.date).toISOString(),
+          date: form.date,
         }),
       });
       if (!res.ok) {
@@ -125,31 +123,34 @@ export default function TransactionModal({ accounts, creditCards, categories, on
   const isIngreso = form.type === "INGRESO";
 
   const amountColor = isIngreso
-    ? "text-green-500 placeholder:text-green-300"
+    ? "text-green-500" // we keep tailwind colors for semantic semantic variants like text-green-500, but they're not fully var themed yet unless we map them. But we have --success and --danger.
     : isGasto
-    ? "text-red-500 placeholder:text-red-300"
-    : "text-gray-800 placeholder:text-gray-400";
+    ? "text-red-500"
+    : "";
 
-  const inputBase = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-400 bg-white transition-all";
+  const inputStyle = { background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-primary)" };
+  const inputBase = "w-full text-sm border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-gray-300 transition-all";
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
+      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)" }}
       onClick={onClose}
     >
       <div
-        className="bg-white w-full sm:max-w-[420px] rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full sm:max-w-[420px] rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
+        style={{ background: "var(--bg-surface)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle bar (mobile) */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-10 h-1 rounded-full bg-gray-200" />
+          <div className="w-10 h-1 rounded-full" style={{ background: "var(--border)" }} />
         </div>
 
         {/* ── Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-2 sm:pt-5">
-          <h3 className="text-[15px] font-semibold text-gray-900">Nuevo movimiento</h3>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+          <h3 className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>Nuevo movimiento</h3>
+          <button type="button" onClick={onClose} className="transition-colors p-1" style={{ color: "var(--text-muted)" }}>
             <X size={16} />
           </button>
         </div>
@@ -157,16 +158,15 @@ export default function TransactionModal({ accounts, creditCards, categories, on
         <form onSubmit={handleSubmit} className="px-5 pb-6 space-y-5">
 
           {/* ── Monto + Toggle tipo ─────────────────────────────── */}
-          <div className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3">
+          <div className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "var(--bg-surface-2)" }}>
             {/* [-] Gasto */}
             <button
               type="button"
               onClick={() => setType("GASTO")}
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold shrink-0 transition-all border-2 ${
-                isGasto
-                  ? "bg-red-500 border-red-500 text-white shadow-md shadow-red-200"
-                  : "bg-white border-gray-200 text-gray-400 hover:border-red-300"
-              }`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-lg leading-none font-bold shrink-0 transition-all border-2`}
+              style={isGasto
+                ? { background: "var(--danger)", borderColor: "var(--danger)", color: "white" }
+                : { background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-muted)" }}
             >
               −
             </button>
@@ -175,23 +175,22 @@ export default function TransactionModal({ accounts, creditCards, categories, on
               ref={amountRef}
               type="number"
               min="0"
-              step="100"
+              step="0.01"
               value={form.amount}
               onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
               placeholder="0"
-              className={`flex-1 text-3xl font-bold bg-transparent outline-none text-center ${amountColor}`}
-              style={{ minWidth: 0 }}
+              className="flex-1 text-3xl leading-tight font-bold bg-transparent outline-none text-center"
+              style={{ minWidth: 0, color: isGasto ? "var(--danger)" : isIngreso ? "var(--success)" : "var(--text-primary)" }}
             />
 
             {/* [+] Ingreso */}
             <button
               type="button"
               onClick={() => setType("INGRESO")}
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold shrink-0 transition-all border-2 ${
-                isIngreso
-                  ? "bg-green-500 border-green-500 text-white shadow-md shadow-green-200"
-                  : "bg-white border-gray-200 text-gray-400 hover:border-green-300"
-              }`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-lg leading-none font-bold shrink-0 transition-all border-2`}
+              style={isIngreso
+                ? { background: "var(--success)", borderColor: "var(--success)", color: "white" }
+                : { background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-muted)" }}
             >
               +
             </button>
@@ -203,36 +202,32 @@ export default function TransactionModal({ accounts, creditCards, categories, on
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             placeholder="¿En qué? (opcional)"
-            className="w-full text-sm bg-transparent border-b border-gray-200 pb-2 outline-none text-gray-800 placeholder:text-gray-400 focus:border-gray-500 transition-colors"
+            className="w-full text-sm bg-transparent border-b pb-2 outline-none transition-colors"
+            style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
           />
 
           {/* ── Categorías planas ───────────────────────────────── */}
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Categoría</p>
+            <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-2" style={{ color: "var(--text-muted)" }}>Categoría</p>
             {flatCategories.length === 0 ? (
-              <p className="text-xs text-gray-400">Sin categorías para este tipo.</p>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Sin categorías para este tipo.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
-                {flatCategories.map(({ cat, firstSub, allSubs }) => {
+                {flatCategories.map((cat) => {
                   const isSelected = form.category === cat;
+                  const catIcon = categoriesForType[cat]?.[0]?.icon || getCategoryEmoji(cat);
                   return (
                     <button
                       key={cat}
                       type="button"
-                      onClick={() => selectCategory(cat, isSelected && allSubs.length > 1 ? allSubs[(allSubs.indexOf(form.subcategory) + 1) % allSubs.length] : firstSub)}
-                      className={`flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border text-center transition-all ${
-                        isSelected
-                          ? "border-gray-900 bg-gray-900 text-white"
-                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-                      }`}
+                      onClick={() => selectCategory(cat)}
+                      className="flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border text-center transition-all"
+                      style={isSelected
+                        ? { background: "var(--accent)", borderColor: "var(--accent)", color: "var(--accent-fg)" }
+                        : { background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
                     >
-                      <span className="text-xl leading-none">{getCategoryEmoji(cat)}</span>
+                      <span className="text-xl leading-none">{catIcon}</span>
                       <span className="text-[10px] font-semibold leading-tight truncate w-full text-center">{cat}</span>
-                      {isSelected && form.subcategory && (
-                        <span className={`text-[9px] leading-tight truncate w-full text-center ${isSelected ? "text-gray-300" : "text-gray-400"}`}>
-                          {form.subcategory}
-                        </span>
-                      )}
                     </button>
                   );
                 })}
@@ -243,11 +238,12 @@ export default function TransactionModal({ accounts, creditCards, categories, on
           {/* ── Medio de pago + Fecha ──────────────────────────── */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Medio de pago</p>
+              <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Medio de pago</p>
               <select
                 value={form.paymentMethod}
                 onChange={(e) => setForm((f) => ({ ...f, paymentMethod: e.target.value }))}
                 className={inputBase}
+                style={inputStyle}
               >
                 <option value="" disabled>Selecciona...</option>
                 <optgroup label="Cuentas / Efectivo">
@@ -265,12 +261,13 @@ export default function TransactionModal({ accounts, creditCards, categories, on
               </select>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Fecha</p>
+              <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Fecha</p>
               <input
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                 className={inputBase}
+                style={inputStyle}
               />
             </div>
           </div>
@@ -278,7 +275,7 @@ export default function TransactionModal({ accounts, creditCards, categories, on
           {/* ── Cuotas (solo TC) ─────────────────────────────────── */}
           {form.paymentMethod.startsWith("CREDIT_CARD") && (
             <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Número de cuotas</p>
+              <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Número de cuotas</p>
               <input
                 type="number"
                 min="1"
@@ -286,25 +283,27 @@ export default function TransactionModal({ accounts, creditCards, categories, on
                 value={form.installments}
                 onChange={(e) => setForm((f) => ({ ...f, installments: e.target.value }))}
                 className={inputBase}
+                style={inputStyle}
               />
             </div>
           )}
 
           {/* ── Tags ──────────────────────────────────────────────── */}
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Etiquetas (opcional)</p>
+            <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Etiquetas (opcional)</p>
             <input
               type="text"
               value={form.tags}
               onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
               placeholder="#supermercado #tarjeta"
-              className="w-full text-sm bg-transparent border-b border-gray-200 pb-2 outline-none text-gray-600 placeholder:text-gray-300 focus:border-gray-500 transition-colors"
+              className="w-full text-sm bg-transparent border-b pb-2 outline-none transition-colors"
+              style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
             />
           </div>
 
           {/* ── Error ─────────────────────────────────────────────── */}
           {error && (
-            <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+            <div className="text-xs rounded-lg px-3 py-2" style={{ background: "var(--danger-bg)", color: "var(--danger)", border: "1px solid var(--danger)" }}>
               {error}
             </div>
           )}
@@ -313,7 +312,8 @@ export default function TransactionModal({ accounts, creditCards, categories, on
           <button
             type="submit"
             disabled={loading}
-            className="w-full text-sm font-semibold text-white bg-gray-900 hover:bg-black py-3 rounded-xl transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+            className="w-full text-sm font-semibold py-3 rounded-xl transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+            style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
           >
             {loading && <RefreshCw size={14} className="animate-spin" />}
             {loading ? "Guardando..." : "Registrar movimiento"}

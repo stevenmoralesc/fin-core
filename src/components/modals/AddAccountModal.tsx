@@ -16,12 +16,6 @@ export default function AddAccountModal({ onClose }: AddAccountModalProps) {
     currency: "COP",
   });
 
-  const formatCOPInput = (val: string) => {
-    const num = val.replace(/\D/g, "");
-    if (!num) return "";
-    return "$" + parseInt(num, 10).toLocaleString("es-CO");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -32,7 +26,7 @@ export default function AddAccountModal({ onClose }: AddAccountModalProps) {
         body: JSON.stringify({
           name: form.name.trim(),
           type: form.type,
-          initialBalance: Number(form.initialBalance.replace(/\D/g, "")),
+          initialBalance: Number(form.initialBalance),
           currency: form.currency,
         }),
       });
@@ -49,18 +43,18 @@ export default function AddAccountModal({ onClose }: AddAccountModalProps) {
   };
 
   const inputClass =
-    "w-full border-b border-gray-200 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-gray-800 transition-colors bg-transparent";
+    "w-full border-b border-base py-2.5 text-primary text-sm focus:outline-none focus:border-gray-800 transition-colors bg-transparent";
   const labelClass =
-    "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1";
+    "block text-[10px] leading-none font-bold text-muted uppercase tracking-wide mb-1";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-      <div className="bg-white rounded-[24px] w-full max-w-[400px] shadow-2xl overflow-hidden">
+      <div className="bg-surface rounded-[24px] w-full max-w-[400px] shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
-          <h2 className="text-lg font-bold text-gray-900">Nueva Cuenta</h2>
+          <h2 className="text-lg font-bold text-primary">Nueva Cuenta</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-3 text-muted transition-colors"
           >
             <X size={20} />
           </button>
@@ -92,7 +86,7 @@ export default function AddAccountModal({ onClose }: AddAccountModalProps) {
                   className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors border ${
                     form.type === t
                       ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                      : "bg-surface text-secondary border-base hover:border-gray-300"
                   }`}
                 >
                   {t === "EFECTIVO" ? "💵 Efectivo" : t === "AHORROS" ? "🏦 Ahorros" : "🏧 Corriente"}
@@ -105,14 +99,15 @@ export default function AddAccountModal({ onClose }: AddAccountModalProps) {
           <div>
             <label className={labelClass}>Saldo Inicial</label>
             <input
-              type="text"
+              type="number"
+              step="0.01"
               value={form.initialBalance}
-              onChange={(e) => setForm((f) => ({ ...f, initialBalance: formatCOPInput(e.target.value) }))}
+              onChange={(e) => setForm((f) => ({ ...f, initialBalance: e.target.value }))}
               placeholder="$0"
               className={inputClass}
               required
             />
-            <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
+            <p className="text-[11px] text-muted mt-1.5 leading-relaxed">
               El saldo que tenías en esta cuenta antes de empezar a trackear.
             </p>
           </div>

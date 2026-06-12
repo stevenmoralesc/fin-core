@@ -24,12 +24,6 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
     paymentDay: String(card.paymentDay),
   });
 
-  const formatCOPInput = (val: string) => {
-    const num = val.replace(/\D/g, "");
-    if (!num) return "";
-    return "$" + parseInt(num, 10).toLocaleString("es-CO");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -40,7 +34,7 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
         body: JSON.stringify({
           name: form.name.trim(),
           bank: form.bank.trim(),
-          totalLimit: Number(form.totalLimit.replace(/\D/g, "")),
+          totalLimit: Number(form.totalLimit),
           closingDay: Number(form.closingDay),
           paymentDay: Number(form.paymentDay),
         }),
@@ -76,18 +70,18 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
   };
 
   const inputClass =
-    "w-full border-b border-gray-200 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-gray-800 transition-colors bg-transparent";
+    "w-full border-b border-base py-2.5 text-primary text-sm focus:outline-none focus:border-gray-800 transition-colors bg-transparent";
   const labelClass =
-    "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1";
+    "block text-[10px] leading-none font-bold text-muted uppercase tracking-wide mb-1";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-      <div className="bg-white rounded-[24px] w-full max-w-[400px] shadow-2xl overflow-hidden">
+      <div className="bg-surface rounded-[24px] w-full max-w-[400px] shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
-          <h2 className="text-lg font-bold text-gray-900">Editar Tarjeta</h2>
+          <h2 className="text-lg font-bold text-primary">Editar Tarjeta</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-3 text-muted transition-colors"
           >
             <X size={20} />
           </button>
@@ -122,8 +116,9 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
           <div>
             <label className={labelClass}>Cupo Total</label>
             <input
-              type="text"
-              value={formatCOPInput(form.totalLimit)}
+              type="number"
+              step="0.01"
+              value={form.totalLimit}
               onChange={(e) => setForm((f) => ({ ...f, totalLimit: e.target.value }))}
               className={inputClass}
               required
@@ -162,7 +157,7 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              className="w-12 h-12 flex items-center justify-center rounded-xl border border-gray-200 hover:bg-red-50 hover:border-red-200 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+              className="w-12 h-12 flex items-center justify-center rounded-xl border border-base hover:bg-red-50 hover:border-red-200 text-muted hover:text-red-500 transition-colors shrink-0"
             >
               <Trash2 size={18} />
             </button>
@@ -180,18 +175,18 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
       {/* Confirm delete */}
       {confirmDelete && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-gray-900/60">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
+          <div className="bg-surface rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
             <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Trash2 size={22} className="text-red-500" />
             </div>
-            <h3 className="text-base font-bold text-gray-900 mb-1">¿Eliminar tarjeta?</h3>
-            <p className="text-sm text-gray-500 mb-5">
+            <h3 className="text-base font-bold text-primary mb-1">¿Eliminar tarjeta?</h3>
+            <p className="text-sm text-secondary mb-5">
               Esta acción eliminará la tarjeta. Asegúrate de no tener cuotas pendientes.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                className="flex-1 py-2.5 rounded-xl border border-base text-sm font-semibold text-gray-600 hover:bg-surface-2"
               >
                 Cancelar
               </button>

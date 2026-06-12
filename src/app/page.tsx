@@ -5,7 +5,7 @@
  */
 
 import { db } from "@/lib/db";
-import Dashboard from "@/components/Dashboard";
+import Dashboard from "@/components/dashboard/Dashboard";
 import type { DashboardSummary, Account, CreditCard, SystemConfig } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -28,18 +28,17 @@ function getCreditCards(): CreditCard[] {
     .all() as CreditCard[];
 }
 
-function getCategories(): Record<string, { subcategory: string; suggestedBudget: number }[]> {
+function getCategories(): Record<string, { suggestedBudget: number }[]> {
   const rows = db
     .prepare(
-      `SELECT category, subcategory, suggestedBudget FROM sys_config ORDER BY category, subcategory`
+      `SELECT category, suggestedBudget FROM sys_config ORDER BY category`
     )
     .all() as SystemConfig[];
 
-  const grouped: Record<string, { subcategory: string; suggestedBudget: number }[]> = {};
+  const grouped: Record<string, { suggestedBudget: number }[]> = {};
   for (const row of rows) {
     if (!grouped[row.category]) grouped[row.category] = [];
     grouped[row.category].push({
-      subcategory: row.subcategory,
       suggestedBudget: row.suggestedBudget,
     });
   }
@@ -52,13 +51,13 @@ export default async function HomePage() {
   const categories = await Promise.resolve(
     (() => {
       const rows = db
-        .prepare(`SELECT category, subcategory, suggestedBudget, transactionType FROM sys_config ORDER BY transactionType, category, subcategory`)
+        .prepare(`SELECT category, suggestedBudget, transactionType FROM sys_config ORDER BY transactionType, category`)
         .all() as import("@/lib/types").SystemConfig[];
       const result: import("@/lib/types").CategoriesByType = { GASTO: {}, INGRESO: {}, TRANSFERENCIA: {} };
       for (const row of rows) {
         const t = row.transactionType ?? "GASTO";
         if (!result[t][row.category]) result[t][row.category] = [];
-        result[t][row.category].push({ subcategory: row.subcategory, suggestedBudget: row.suggestedBudget });
+        result[t][row.category].push({ suggestedBudget: row.suggestedBudget });
       }
       return result;
     })()

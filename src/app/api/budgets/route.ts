@@ -4,21 +4,21 @@ import type { NextRequest } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { category, subcategory, suggestedBudget, transactionType = "GASTO" } = body;
+    const { category, suggestedBudget, transactionType = "GASTO", icon } = body;
 
-    if (!category || !subcategory || suggestedBudget === undefined) {
+    if (!category || suggestedBudget === undefined) {
       return Response.json({ error: "Campos requeridos faltantes" }, { status: 400 });
     }
 
     db.prepare(`
-      INSERT INTO sys_config (category, subcategory, suggestedBudget, transactionType, createdAt)
-      VALUES (@category, @subcategory, @suggestedBudget, @transactionType, @createdAt)
-      ON CONFLICT(category, subcategory) DO UPDATE SET
+      INSERT INTO sys_config (category, icon, suggestedBudget, transactionType, createdAt)
+      VALUES (@category, @icon, @suggestedBudget, @transactionType, @createdAt)
+      ON CONFLICT(category, transactionType) DO UPDATE SET
         suggestedBudget = excluded.suggestedBudget,
-        transactionType = excluded.transactionType
+        icon = excluded.icon
     `).run({
       category: category.trim(),
-      subcategory: subcategory.trim(),
+      icon: icon ? icon.trim() : null,
       suggestedBudget: Number(suggestedBudget),
       transactionType,
       createdAt: new Date().toISOString(),
@@ -28,5 +28,23 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("[POST /api/budgets]", error);
     return Response.json({ error: "Error al guardar el presupuesto" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get("category");
+
+    if (!category) {
+      return Response.json({ error: "Falta la categoría" }, { status: 400 });
+    }
+
+    db.prepare(`DELETE FROM sys_config WHERE category = ?`).run(category);
+
+    return Response.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error("[DELETE /api/budgets]", error);
+    return Response.json({ error: "Error al eliminar el presupuesto" }, { status: 500 });
   }
 }

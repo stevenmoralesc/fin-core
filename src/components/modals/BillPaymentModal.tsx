@@ -17,7 +17,7 @@ interface AccountWithBalance extends Account {
 }
 
 function formatCOP(value: number): string {
-  return "$" + Math.round(value).toLocaleString("es-CO");
+  return "$" + Number(value).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function accountIcon(type: string) {
@@ -55,25 +55,20 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
 
   const selectedAccount = accountsWithBalance.find((a) => a.id === selectedAccountId);
   const payAmount = useCustomAmount
-    ? Number(customAmount.replace(/\D/g, ""))
+    ? Number(customAmount)
     : billAmount;
 
   const insufficientFunds = selectedAccount
     ? selectedAccount.currentBalance < payAmount
     : false;
 
-  const formatCOPInput = (val: string) => {
-    const num = val.replace(/\D/g, "");
-    if (!num) return "";
-    return "$" + parseInt(num, 10).toLocaleString("es-CO");
-  };
-
   const handlePay = async () => {
     if (!selectedAccountId || payAmount <= 0) return;
     setLoading(true);
 
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const d = new Date();
+      const today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
 
       const res = await fetch("/api/transactions", {
         method: "POST",
@@ -81,7 +76,7 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
         body: JSON.stringify({
           type: "GASTO",
           category: "Tarjetas de Crédito",
-          subcategory: `Pago ${card.name}`,
+
           amount: payAmount,
           description: `Pago factura ${card.name} — ${new Date().toLocaleString("es-CO", { month: "long", year: "numeric" })}`,
           paymentMethodId: selectedAccountId,
@@ -113,17 +108,17 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-      <div className="bg-white rounded-[24px] w-full max-w-[440px] shadow-2xl overflow-hidden">
+      <div className="bg-surface rounded-[24px] w-full max-w-[440px] shadow-2xl overflow-hidden">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Pagar Factura del Mes</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{card.name} · {card.bank}</p>
+            <h2 className="text-lg font-bold text-primary">Pagar Factura del Mes</h2>
+            <p className="text-xs text-muted mt-0.5">{card.name} · {card.bank}</p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-3 text-muted transition-colors"
           >
             <X size={20} />
           </button>
@@ -132,18 +127,18 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
         <div className="p-6 space-y-5">
           
           {/* Resumen de la factura */}
-          <div className="bg-gray-50 rounded-2xl p-4 space-y-2">
+          <div className="bg-surface-2 rounded-2xl p-4 space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Total cuotas del mes</span>
-              <span className="text-xl font-bold text-gray-900">{formatCOP(billAmount)}</span>
+              <span className="text-xs font-semibold text-muted uppercase tracking-widest">Total cuotas del mes</span>
+              <span className="text-xl font-bold text-primary">{formatCOP(billAmount)}</span>
             </div>
-            <div className="flex justify-between items-center text-xs text-gray-500">
+            <div className="flex justify-between items-center text-xs text-secondary">
               <span>Próximo corte: día {card.closingDay}</span>
-              <span className={`font-semibold ${daysUntilClosing <= 5 ? "text-red-500" : "text-gray-500"}`}>
+              <span className={`font-semibold ${daysUntilClosing <= 5 ? "text-red-500" : "text-secondary"}`}>
                 {daysUntilClosing === 0 ? "¡Hoy!" : `Faltan ${daysUntilClosing} días`}
               </span>
             </div>
-            <div className="flex justify-between items-center text-xs text-gray-500">
+            <div className="flex justify-between items-center text-xs text-secondary">
               <span>Día de pago</span>
               <span className="font-semibold text-gray-700">Día {card.paymentDay} de cada mes</span>
             </div>
@@ -152,7 +147,7 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
           {/* Monto a pagar */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              <label className="text-[10px] leading-none font-bold text-muted uppercase tracking-wide">
                 Monto a Pagar
               </label>
               <button
@@ -165,27 +160,28 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
             </div>
             {useCustomAmount ? (
               <input
-                type="text"
+                type="number"
+              step="0.01"
                 value={customAmount}
-                onChange={(e) => setCustomAmount(formatCOPInput(e.target.value))}
-                className="w-full border-b border-gray-200 py-2.5 text-gray-900 text-base font-bold focus:outline-none focus:border-gray-800 transition-colors bg-transparent"
+                onChange={(e) => setCustomAmount(e.target.value)}
+                className="w-full border-b border-base py-2.5 text-primary text-base font-bold focus:outline-none focus:border-gray-800 transition-colors bg-transparent"
                 placeholder="$0"
               />
             ) : (
-              <div className="py-2.5 border-b border-gray-100">
-                <span className="text-base font-bold text-gray-900">{formatCOP(billAmount)}</span>
+              <div className="py-2.5 border-b border-subtle">
+                <span className="text-base font-bold text-primary">{formatCOP(billAmount)}</span>
               </div>
             )}
           </div>
 
           {/* Selector de cuenta */}
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+            <label className="block text-[10px] leading-none font-bold text-muted uppercase tracking-wide mb-2">
               Pagar desde
             </label>
             <div className="space-y-2">
               {loadingBalances ? (
-                <div className="h-16 bg-gray-50 rounded-xl animate-pulse" />
+                <div className="h-16 bg-surface-2 rounded-xl animate-pulse" />
               ) : (
                 accountsWithBalance.map((acc) => {
                   const isSelected = acc.id === selectedAccountId;
@@ -199,23 +195,23 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
                         isSelected
                           ? "border-gray-900 bg-gray-900 text-white"
                           : insufficient
-                          ? "border-gray-100 bg-gray-50 opacity-60"
-                          : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                          ? "border-subtle bg-surface-2 opacity-60"
+                          : "border-subtle hover:border-base hover:bg-surface-2"
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-lg">{accountIcon(acc.type)}</span>
                         <div>
-                          <p className={`text-sm font-semibold ${isSelected ? "text-white" : "text-gray-800"}`}>
+                          <p className={`text-sm font-semibold ${isSelected ? "text-white" : "text-primary"}`}>
                             {acc.name}
                           </p>
-                          <p className={`text-xs ${isSelected ? "text-gray-300" : "text-gray-400"}`}>
+                          <p className={`text-xs ${isSelected ? "text-gray-300" : "text-muted"}`}>
                             {acc.type}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`text-sm font-bold tabular-nums ${isSelected ? "text-white" : insufficient ? "text-red-400" : "text-gray-800"}`}>
+                        <p className={`text-sm font-bold tabular-nums ${isSelected ? "text-white" : insufficient ? "text-red-400" : "text-primary"}`}>
                           {formatCOP(acc.currentBalance)}
                         </p>
                         {insufficient && !isSelected && (

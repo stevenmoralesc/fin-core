@@ -9,7 +9,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { type, category, subcategory, amount, description, date } = body;
+    const { type, category, amount, description, date } = body;
 
     const existing = db
       .prepare(`SELECT id, debtReferenceId FROM fact_transacciones WHERE id = ?`)
@@ -22,7 +22,7 @@ export async function PATCH(
       UPDATE fact_transacciones
       SET type = @type,
           category = @category,
-          subcategory = @subcategory,
+
           amount = @amount,
           description = @description,
           date = @date,
@@ -32,10 +32,10 @@ export async function PATCH(
       id,
       type,
       category: category.trim(),
-      subcategory: subcategory.trim(),
+
       amount: Number(amount),
       description: description ?? null,
-      date: date ? new Date(date).toISOString() : new Date().toISOString(),
+      date: date || new Date().toISOString().slice(0, 10),
       now: new Date().toISOString(),
     });
     if (existing.debtReferenceId) {

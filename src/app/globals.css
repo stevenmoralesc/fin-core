@@ -103,7 +103,7 @@
 /* ─────────────────────────────────────────────────────────────────
    Tailwind theme bridge
 ───────────────────────────────────────────────────────────────── */
-@theme inline {
+@theme {
   --color-bg-base:      var(--bg-base);
   --color-bg-surface:   var(--bg-surface);
   --color-bg-surface-2: var(--bg-surface-2);

@@ -70,7 +70,6 @@ model Transaction {
   date            DateTime  @default(now())
   type            String    // INGRESO | GASTO | TRANSFERENCIA
   category        String
-  subcategory     String
   amount          Float
   description     String?                      // opcional
   debtReferenceId String?                      // FK opcional → InstallmentPurchase
@@ -110,11 +109,11 @@ model InstallmentPurchase {
 model SystemConfig {
   id              Int      @id @default(autoincrement())
   category        String
-  subcategory     String
+  icon            String?
   suggestedBudget Float    @default(0)
   transactionType String   @default("GASTO")
   createdAt       DateTime @default(now())
 
-  @@unique([category, subcategory])
+  @@unique([category, transactionType])
   @@map("sys_config")
 }

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import Sidebar from "@/components/layout/Sidebar";
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { db } from "@/lib/db";
 import type { Account, CreditCard, SystemConfig } from "@/lib/types";
 
@@ -41,8 +41,8 @@ function getCreditCards(): CreditCard[] {
 function getCategories(): import("@/lib/types").CategoriesByType {
   const rows = db
     .prepare(
-      `SELECT category, subcategory, suggestedBudget, transactionType
-       FROM sys_config ORDER BY transactionType, category, subcategory`
+      `SELECT category, suggestedBudget, transactionType, icon
+       FROM sys_config ORDER BY transactionType, category`
     )
     .all() as import("@/lib/types").SystemConfig[];
 
@@ -57,8 +57,8 @@ function getCategories(): import("@/lib/types").CategoriesByType {
     if (!result[type]) result[type as keyof typeof result] = {};
     if (!result[type][row.category]) result[type][row.category] = [];
     result[type][row.category].push({
-      subcategory: row.subcategory,
       suggestedBudget: row.suggestedBudget,
+      icon: row.icon,
     });
   }
   return result;

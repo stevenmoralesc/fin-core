@@ -2,31 +2,33 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Wallet, CreditCard, ShoppingCart, ArrowUpRight, ArrowDownLeft, MoreHorizontal, ChevronDown } from "lucide-react";
-import EditTransactionModal from "@/components/EditTransactionModal";
-import TransactionModal from "@/components/TransactionModal";
+import EditTransactionModal from "@/components/modals/EditTransactionModal";
+import TransactionModal from "@/components/modals/TransactionModal";
 import type { DashboardSummary, CategoriesByType, Transaction } from "@/lib/types";
 
 // ── Helpers ───────────────────────────────────────────────────
 function formatCOP(value: number, showSign = true): string {
   const abs = Math.abs(value);
-  const formatted = abs.toLocaleString("es-CO");
+  const formatted = abs.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (!showSign) return `$${formatted}`;
   return value < 0 ? `−$${formatted}` : `+$${formatted}`;
 }
 
 function formatCOPShort(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
-  return `$${value.toLocaleString("es-CO")}`;
+  return `$${value.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function relativeDate(isoDate: string): string {
-  const date = new Date(isoDate);
+  const dateStr = isoDate.length === 10 ? isoDate + 'T12:00:00' : isoDate;
+  const date = new Date(dateStr);
   const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / 86_400_000);
-  if (days === 0) return "Hoy";
-  if (days === 1) return "Ayer";
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  
+  const diff = Math.floor((today.getTime() - target.getTime()) / 86_400_000);
+  
+  if (diff === 0) return "Hoy";
+  if (diff === 1) return "Ayer";
   return date.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
 }
 
@@ -79,7 +81,7 @@ function MonthPickerPopover({
         style={{ background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-primary)", boxShadow: "var(--shadow-sm)" }}
       >
         <span className="capitalize">{label}</span>
-        <ChevronDown size={13} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={13} className={`text-muted transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
@@ -220,7 +222,7 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
       {/* ── BLOQUE 1: HEADER ──────────────────────────────────── */}
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Resumen</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-primary">Resumen</h1>
           <MonthPickerPopover periodo={periodo} onChange={setPeriodo} />
         </div>
         <button
@@ -322,7 +324,7 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
                     {tx.paymentMethodName ? (
                       <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{tx.paymentMethodName} · </span>
                     ) : ""}
-                    {tx.category} · {tx.subcategory} · {relativeDate(tx.date)}
+                    {tx.category} · {relativeDate(tx.date)}
                   </p>
                 </div>
                 <span

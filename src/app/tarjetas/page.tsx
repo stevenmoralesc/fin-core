@@ -4,7 +4,7 @@
  */
 
 import { db } from "@/lib/db";
-import CreditCardView from "@/components/CreditCardView";
+import CreditCardView from "@/components/views/CreditCardView";
 import type { Account, CreditCard, InstallmentPurchase, CreditCardDetails } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -73,16 +73,7 @@ export default async function TarjetasPage() {
     Promise.resolve(getAccounts()),
   ]);
 
-  if (details.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full py-16 text-center">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">No hay tarjetas registradas</h2>
-        <p className="text-sm text-gray-500 max-w-sm">
-          Agrega una tarjeta de crédito en tu base de datos para ver la amortización de tus compras a cuotas.
-        </p>
-      </div>
-    );
-  }
+
 
   return <CreditCardView initialData={details} accounts={accounts} />;
 }

@@ -7,18 +7,17 @@ export async function GET() {
   try {
     const rows = db
       .prepare(
-        `SELECT category, subcategory, suggestedBudget
+        `SELECT category, suggestedBudget
          FROM sys_config
-         ORDER BY category, subcategory`
+         ORDER BY category`
       )
-      .all() as Array<{ category: string; subcategory: string; suggestedBudget: number }>;
+      .all() as Array<{ category: string; suggestedBudget: number }>;
 
     // Agrupar por categoría
-    const grouped: Record<string, { subcategory: string; suggestedBudget: number }[]> = {};
+    const grouped: Record<string, { suggestedBudget: number }[]> = {};
     for (const row of rows) {
       if (!grouped[row.category]) grouped[row.category] = [];
       grouped[row.category].push({
-        subcategory: row.subcategory,
         suggestedBudget: row.suggestedBudget,
       });
     }

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const accountId = searchParams.get("accountId");
 
     let query = `
-      SELECT id, date, type, category, subcategory, amount, description,
+      SELECT id, date, type, category, amount, description,
              accountId, createdAt, updatedAt
       FROM fact_transacciones
       WHERE 1=1
@@ -44,10 +44,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, category, subcategory, amount, description, paymentMethodId, paymentMethodType, installments, date } = body;
+    const { type, category, amount, description, paymentMethodId, paymentMethodType, installments, date } = body;
 
     // Validación básica
-    if (!type || !category || !subcategory || amount === undefined || !paymentMethodId || !paymentMethodType) {
+    if (!type || !category || amount === undefined || !paymentMethodId || !paymentMethodType) {
       return Response.json(
         { error: "Campos requeridos faltantes" },
         { status: 400 }
@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
 
     const id = randomUUID();
     const now = new Date().toISOString();
-    const txDate = date ?? now;
+    const d = new Date();
+    const txDate = date ?? (d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'));
 
     let accountId = null;
     let debtReferenceId = null;
@@ -101,15 +102,15 @@ export async function POST(request: NextRequest) {
     // Crear la transacción
     db.prepare(`
       INSERT INTO fact_transacciones
-        (id, date, type, category, subcategory, amount, description, accountId, debtReferenceId, createdAt, updatedAt)
+        (id, date, type, category, amount, description, accountId, debtReferenceId, createdAt, updatedAt)
       VALUES
-        (@id, @date, @type, @category, @subcategory, @amount, @description, @accountId, @debtReferenceId, @createdAt, @updatedAt)
+        (@id, @date, @type, @category, @amount, @description, @accountId, @debtReferenceId, @createdAt, @updatedAt)
     `).run({
       id,
       date: txDate,
       type,
       category,
-      subcategory,
+
       amount: Number(amount),
       description: description ?? null,
       accountId,

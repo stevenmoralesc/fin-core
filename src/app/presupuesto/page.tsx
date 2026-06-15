@@ -25,11 +25,13 @@ export default async function PresupuestoPage() {
       SELECT t.category, t.amount, t.debtReferenceId, c.totalAmount, c.totalMonths, c.monthlyInterest, c.status
       FROM fact_transacciones t
       LEFT JOIN fact_compras_cuotas c ON t.debtReferenceId = c.id
-      WHERE t.type = 'GASTO' 
+      WHERE t.type = 'GASTO'
         AND (
           (t.debtReferenceId IS NULL AND t.date >= ?)
-          OR 
-          (t.debtReferenceId IS NOT NULL AND c.status = 'VIGENTE')
+          OR
+          -- Devengo de cuotas: solo la compra original (accountId NULL),
+          -- no los pagos de cuota (que ya redujeron el saldo de la cuenta).
+          (t.debtReferenceId IS NOT NULL AND t.accountId IS NULL AND c.status = 'VIGENTE')
         )
     `)
     .all(primerDiaMes) as { category: string; amount: number; debtReferenceId: string | null; totalAmount: number; totalMonths: number; monthlyInterest: number; status: string }[];
@@ -74,7 +76,7 @@ export default async function PresupuestoPage() {
   }
 
   return (
-    <div className="pt-6">
+    <div className="px-6 md:px-10 py-8">
       <BudgetDashboard initialStats={stats} />
     </div>
   );

@@ -35,8 +35,8 @@ export default function AddAccountModal({ onClose }: AddAccountModalProps) {
         throw new Error(err.error ?? "Error");
       }
       onClose();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err) {
+      alert("Error: " + (err as Error).message);
     } finally {
       setLoading(false);
     }

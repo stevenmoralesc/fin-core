@@ -43,6 +43,8 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
   const [addCardOpen, setAddCardOpen] = useState(false);
   const [editCardOpen, setEditCardOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [payInstallmentId, setPayInstallmentId] = useState<string | null>(null);
+  const [payAccountId, setPayAccountId] = useState<string>(accounts[0]?.id ?? "");
 
   if (initialData.length === 0) {
     return (
@@ -109,9 +111,18 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
     },
   ];
 
-  const handlePayInstallment = (id: string) => {
+  const handlePayInstallment = (id: string, accountId: string) => {
     startTransition(async () => {
-      await fetch(`/api/installments/${id}`, { method: "PATCH" });
+      const res = await fetch(`/api/installments/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId }),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        alert("Error: " + (e.error ?? "No se pudo pagar la cuota"));
+      }
+      setPayInstallmentId(null);
       router.refresh();
     });
   };
@@ -234,7 +245,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
             </div>
             <p className="text-sm font-medium text-muted">No hay compras diferidas</p>
             <p className="text-xs text-gray-300 mt-1">
-              Haz clic en "Nueva Compra Diferida" para registrar
+              Haz clic en &quot;Nueva Compra Diferida&quot; para registrar
             </p>
           </div>
         ) : (
@@ -290,7 +301,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
                     </div>
                     <div className="flex items-center justify-center gap-2 opacity-100 sm:opacity-60 group-hover:opacity-100 transition-opacity">
                       <button
-                        onClick={() => handlePayInstallment(inst.id)}
+                        onClick={() => { setPayAccountId(accounts[0]?.id ?? ""); setPayInstallmentId(inst.id); }}
                         disabled={isPending}
                         title="Marcar cuota como pagada"
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
@@ -399,6 +410,61 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
                 Eliminar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Pay Installment - select account */}
+      {payInstallmentId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
+          <div className="bg-surface rounded-[24px] max-w-sm w-full p-6 shadow-2xl">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "var(--success-bg)" }}>
+              <CalendarCheck size={24} style={{ color: "var(--success)" }} />
+            </div>
+            <h3 className="text-lg font-bold text-primary mb-2 text-center">Pagar cuota</h3>
+            <p className="text-sm text-secondary mb-6 text-center">
+              Elige la cuenta desde la que pagas esta cuota.
+            </p>
+            {accounts.length === 0 ? (
+              <>
+                <p className="text-sm mb-6 text-center" style={{ color: "var(--text-muted)" }}>
+                  No tienes cuentas registradas para pagar.
+                </p>
+                <button
+                  onClick={() => setPayInstallmentId(null)}
+                  className="w-full py-3 rounded-xl border border-base text-sm font-semibold text-gray-600 hover:bg-surface-2 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </>
+            ) : (
+              <>
+                <select
+                  value={payAccountId}
+                  onChange={(e) => setPayAccountId(e.target.value)}
+                  className="w-full mb-6 px-4 py-3 rounded-xl border text-sm font-medium outline-none"
+                  style={{ background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-primary)" }}
+                >
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  ))}
+                </select>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setPayInstallmentId(null)}
+                    className="flex-1 py-3 rounded-xl border border-base text-sm font-semibold text-gray-600 hover:bg-surface-2 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => handlePayInstallment(payInstallmentId, payAccountId)}
+                    disabled={!payAccountId || isPending}
+                    className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-colors disabled:opacity-50"
+                  >
+                    Confirmar pago
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

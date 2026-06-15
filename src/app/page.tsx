@@ -6,18 +6,9 @@
 
 import { db } from "@/lib/db";
 import Dashboard from "@/components/dashboard/Dashboard";
-import type { DashboardSummary, Account, CreditCard, SystemConfig } from "@/lib/types";
+import type { CreditCard } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-
-function getAccounts(): Account[] {
-  return db
-    .prepare(
-      `SELECT id, name, type, initialBalance, currency, status, createdAt, updatedAt
-       FROM dim_cuentas WHERE status = 'ACTIVA' ORDER BY type, name`
-    )
-    .all() as Account[];
-}
 
 function getCreditCards(): CreditCard[] {
   return db
@@ -26,23 +17,6 @@ function getCreditCards(): CreditCard[] {
        FROM dim_tarjetas_credito ORDER BY name`
     )
     .all() as CreditCard[];
-}
-
-function getCategories(): Record<string, { suggestedBudget: number }[]> {
-  const rows = db
-    .prepare(
-      `SELECT category, suggestedBudget FROM sys_config ORDER BY category`
-    )
-    .all() as SystemConfig[];
-
-  const grouped: Record<string, { suggestedBudget: number }[]> = {};
-  for (const row of rows) {
-    if (!grouped[row.category]) grouped[row.category] = [];
-    grouped[row.category].push({
-      suggestedBudget: row.suggestedBudget,
-    });
-  }
-  return grouped;
 }
 
 // Datos hidratados desde cliente (API Router)

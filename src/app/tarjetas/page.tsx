@@ -75,6 +75,10 @@ export default async function TarjetasPage() {
 
 
 
-  return <CreditCardView initialData={details} accounts={accounts} />;
+  return (
+    <div className="px-6 md:px-10 py-8">
+      <CreditCardView initialData={details} accounts={accounts} />
+    </div>
+  );
 }
 

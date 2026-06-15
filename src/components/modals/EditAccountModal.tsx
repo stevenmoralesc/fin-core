@@ -37,8 +37,8 @@ export default function EditAccountModal({ account, onClose }: EditAccountModalP
         throw new Error(err.error ?? "Error al actualizar");
       }
       onClose();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err) {
+      alert("Error: " + (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -57,8 +57,8 @@ export default function EditAccountModal({ account, onClose }: EditAccountModalP
         throw new Error(err.error ?? "Error al eliminar");
       }
       onClose();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err) {
+      alert("Error: " + (err as Error).message);
     } finally {
       setDeleting(false);
     }

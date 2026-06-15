@@ -10,12 +10,21 @@ interface BudgetModalProps {
   stats: BudgetStats[];
   initialCategory?: string;
   initialBudget?: number;
+  initialIcon?: string;
 }
 
-export default function BudgetModal({ onClose, stats, initialCategory, initialBudget }: BudgetModalProps) {
+// Emojis sugeridos para categorías comunes
+const EMOJI_OPTIONS = [
+  "🍔", "🍕", "🛒", "☕", "🍺", "🏠", "🚗", "⛽",
+  "💡", "📱", "💻", "🎮", "🎬", "🎵", "👕", "🛍️",
+  "✈️", "🏖️", "💊", "🏥", "🎓", "📚", "🐶", "🎁",
+  "💰", "💳", "🏦", "💼", "🏋️", "✂️", "🔧", "🌐",
+];
+
+export default function BudgetModal({ onClose, stats, initialCategory, initialBudget, initialIcon }: BudgetModalProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  
+
   const existingCategories = Array.from(new Set(stats.map((s) => s.category)));
 
   const [categoryType, setCategoryType] = useState<"SELECT" | "NEW">(initialCategory ? "SELECT" : "SELECT");
@@ -25,7 +34,7 @@ export default function BudgetModal({ onClose, stats, initialCategory, initialBu
     category: initialCategory || "",
     newCategory: "",
     suggestedBudget: initialBudget ? String(initialBudget) : "",
-    icon: "📌",
+    icon: initialIcon || "📌",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,7 +131,11 @@ export default function BudgetModal({ onClose, stats, initialCategory, initialBu
             {categoryType === "SELECT" ? (
               <select
                 value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                onChange={(e) => {
+                  const cat = e.target.value;
+                  const existing = stats.find((s) => s.category === cat);
+                  setForm((f) => ({ ...f, category: cat, icon: existing?.icon || f.icon }));
+                }}
                 className={inputClass}
                 required
               >
@@ -132,25 +145,57 @@ export default function BudgetModal({ onClose, stats, initialCategory, initialBu
                 ))}
               </select>
             ) : (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  maxLength={2}
-                  value={form.icon}
-                  onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
-                  className="w-12 text-center text-xl border-b border-gray-300 py-2.5 focus:outline-none focus:border-black transition-colors bg-transparent"
-                  title="Icono (Emoji)"
-                />
-                <input
-                  type="text"
-                  value={form.newCategory}
-                  onChange={(e) => setForm((f) => ({ ...f, newCategory: e.target.value }))}
-                  placeholder="Ej. Vivienda, Transporte"
-                  className={inputClass}
-                  required
-                />
-              </div>
+              <input
+                type="text"
+                value={form.newCategory}
+                onChange={(e) => setForm((f) => ({ ...f, newCategory: e.target.value }))}
+                placeholder="Ej. Vivienda, Transporte"
+                className={inputClass}
+                required
+              />
             )}
+          </div>
+
+          {/* Selector de Emoji */}
+          <div>
+            <label className={labelClass}>Emoji de la categoría</label>
+            <div className="flex items-center gap-3 mt-1">
+              <div
+                className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-2xl border"
+                style={{ background: "var(--bg-surface-2)", borderColor: "var(--border)" }}
+              >
+                {form.icon || "📌"}
+              </div>
+              <input
+                type="text"
+                value={form.icon}
+                onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
+                placeholder="Pega cualquier emoji"
+                className={inputClass}
+                title="Emoji personalizado"
+              />
+            </div>
+            <div className="grid grid-cols-8 gap-1.5 mt-3">
+              {EMOJI_OPTIONS.map((emoji) => {
+                const selected = form.icon === emoji;
+                return (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, icon: emoji }))}
+                    className="aspect-square rounded-lg flex items-center justify-center text-lg transition-all border"
+                    style={{
+                      background: selected ? "var(--bg-surface-3)" : "transparent",
+                      borderColor: selected ? "var(--text-primary)" : "transparent",
+                    }}
+                    onMouseEnter={(e) => { if (!selected) e.currentTarget.style.background = "var(--bg-surface-2)"; }}
+                    onMouseLeave={(e) => { if (!selected) e.currentTarget.style.background = "transparent"; }}
+                  >
+                    {emoji}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div>

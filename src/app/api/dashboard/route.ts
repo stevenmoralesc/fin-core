@@ -4,6 +4,13 @@ import type { DashboardSummary } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+type InstallmentRow = {
+  totalAmount: number;
+  totalMonths: number;
+  paidMonths: number;
+  monthlyInterest: number;
+};
+
 export async function GET(req: NextRequest) {
   try {
     const periodo = req.nextUrl.searchParams.get("periodo");
@@ -26,13 +33,18 @@ export async function GET(req: NextRequest) {
     // 1. Liquidez (up to endDate)
     const rowLiquidez = db.prepare(`
       SELECT SUM(
-         initialBalance +
-         COALESCE((SELECT SUM(CASE WHEN type = 'INGRESO' THEN amount ELSE -amount END)
-                   FROM fact_transacciones
-                   WHERE accountId = c.id AND date <= ?), 0)
+         initialBalance
+         + COALESCE((SELECT SUM(CASE WHEN type = 'INGRESO' THEN amount
+                                     WHEN type IN ('GASTO','TRANSFERENCIA') THEN -amount
+                                     ELSE 0 END)
+                     FROM fact_transacciones
+                     WHERE accountId = c.id AND date <= ?), 0)
+         + COALESCE((SELECT SUM(amount)
+                     FROM fact_transacciones
+                     WHERE destinationAccountId = c.id AND type = 'TRANSFERENCIA' AND date <= ?), 0)
       ) as total
       FROM dim_cuentas c WHERE status = 'ACTIVA'
-    `).get(endDate) as { total: number | null };
+    `).get(endDate, endDate) as { total: number | null };
     const totalLiquidity = rowLiquidez.total || 0;
 
     // 2. Gastos Corrientes (strictly within the period + active installments)
@@ -40,17 +52,27 @@ export async function GET(req: NextRequest) {
       SELECT t.amount, t.debtReferenceId, c.totalAmount, c.totalMonths, c.monthlyInterest, c.status
       FROM fact_transacciones t
       LEFT JOIN fact_compras_cuotas c ON t.debtReferenceId = c.id
-      WHERE t.type = 'GASTO' 
+      WHERE t.type = 'GASTO'
         AND (
           (t.debtReferenceId IS NULL AND t.date >= ? AND t.date <= ?)
-          OR 
-          (t.debtReferenceId IS NOT NULL AND c.status = 'VIGENTE' AND t.date <= ?)
+          OR
+          -- Devengo de cuotas: solo la compra original (accountId NULL),
+          -- nunca los pagos de cuota (que llevan accountId y ya redujeron el saldo).
+          (t.debtReferenceId IS NOT NULL AND t.accountId IS NULL AND c.status = 'VIGENTE' AND t.date <= ?)
         )
-    `).all(startDate, endDate, endDate) as any[];
+    `).all(startDate, endDate, endDate) as {
+      amount: number;
+      debtReferenceId: string | null;
+      totalAmount: number;
+      totalMonths: number;
+      monthlyInterest: number;
+      status: string | null;
+    }[];
 
     let expenses = 0;
     for (const row of expenseRows) {
       if (row.debtReferenceId && row.status === 'VIGENTE') {
+        if (!row.totalMonths || row.totalMonths <= 0) continue; // evita división por cero
         const interest = row.monthlyInterest || 0;
         if (interest > 0) {
           const r = interest / 100;
@@ -79,25 +101,26 @@ export async function GET(req: NextRequest) {
         ORDER BY closingDate DESC LIMIT 1
       `).get(card.id, endDate, startDate, startDate, endDate) as { id: string } | undefined;
       
-      let installmentsToSum: any[] = [];
+      let installmentsToSum: InstallmentRow[] = [];
 
       if (statement) {
         installmentsToSum = db.prepare(`
-          SELECT totalAmount, totalMonths, paidMonths, monthlyInterest 
-          FROM fact_compras_cuotas 
+          SELECT totalAmount, totalMonths, paidMonths, monthlyInterest
+          FROM fact_compras_cuotas
           WHERE statementId = ?
-        `).all(statement.id);
+        `).all(statement.id) as InstallmentRow[];
       } else {
         // Fallback: all active purchases on this card up to the endDate
         installmentsToSum = db.prepare(`
-          SELECT totalAmount, totalMonths, paidMonths, monthlyInterest 
+          SELECT totalAmount, totalMonths, paidMonths, monthlyInterest
           FROM fact_compras_cuotas
           WHERE creditCardId = ? AND status = 'VIGENTE' AND purchaseDate <= ?
-        `).all(card.id, endDate);
+        `).all(card.id, endDate) as InstallmentRow[];
       }
 
       for (const inst of installmentsToSum) {
-        const remaining = inst.totalMonths - inst.paidMonths;
+        if (!inst.totalMonths || inst.totalMonths <= 0) continue; // evita división por cero
+        const remaining = Math.max(0, inst.totalMonths - inst.paidMonths);
         const monthly =
           inst.monthlyInterest > 0
             ? (inst.totalAmount * (inst.monthlyInterest / 100)) /
@@ -125,12 +148,18 @@ export async function GET(req: NextRequest) {
     // 5. Cuentas activas con saldo proyectado
     const cuentasActivas = db.prepare(`
       SELECT id, name, type,
-         (initialBalance +
-         COALESCE((SELECT SUM(CASE WHEN type = 'INGRESO' THEN amount ELSE -amount END)
-                   FROM fact_transacciones
-                   WHERE accountId = c.id AND date <= ?), 0)) as currentBalance
+         (initialBalance
+          + COALESCE((SELECT SUM(CASE WHEN type = 'INGRESO' THEN amount
+                                      WHEN type IN ('GASTO','TRANSFERENCIA') THEN -amount
+                                      ELSE 0 END)
+                      FROM fact_transacciones
+                      WHERE accountId = c.id AND date <= ?), 0)
+          + COALESCE((SELECT SUM(amount)
+                      FROM fact_transacciones
+                      WHERE destinationAccountId = c.id AND type = 'TRANSFERENCIA' AND date <= ?), 0)
+         ) as currentBalance
       FROM dim_cuentas c WHERE status = 'ACTIVA' ORDER BY type, name
-    `).all(endDate) as DashboardSummary["cuentasActivas"];
+    `).all(endDate, endDate) as DashboardSummary["cuentasActivas"];
 
     const summary: DashboardSummary = {
       liquidezTotal: totalLiquidity,
@@ -143,8 +172,8 @@ export async function GET(req: NextRequest) {
     };
 
     return NextResponse.json(summary);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Dashboard API Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Error al cargar el dashboard" }, { status: 500 });
   }
 }

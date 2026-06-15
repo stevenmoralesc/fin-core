@@ -66,9 +66,9 @@ export default function InstallmentModal({ onClose, cards, preselectedCardId }: 
 
       router.refresh();
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      alert("Error: " + error.message);
+      alert("Error: " + (error as Error).message);
     } finally {
       setLoading(false);
     }

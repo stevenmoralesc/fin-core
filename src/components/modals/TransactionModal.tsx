@@ -46,6 +46,7 @@ export default function TransactionModal({ accounts, creditCards, categories, on
     type: "GASTO" as "INGRESO" | "GASTO" | "TRANSFERENCIA",
     category: "",
     amount: "",
+    destinationAccount: "",
     description: "",
     tags: "",
     paymentMethod: accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : "",
@@ -72,7 +73,8 @@ export default function TransactionModal({ accounts, creditCards, categories, on
       if (t !== "GASTO" && pm.startsWith("CREDIT_CARD")) {
         pm = accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : "";
       }
-      return { ...f, type: t, category: "", paymentMethod: pm };
+      const category = t === "TRANSFERENCIA" ? "Transferencia" : "";
+      return { ...f, type: t, category, paymentMethod: pm };
     });
   }
 
@@ -86,10 +88,22 @@ export default function TransactionModal({ accounts, creditCards, categories, on
       setError("Elige una categoría e ingresa el monto.");
       return;
     }
-    setLoading(true);
-    setError("");
 
     const [paymentMethodType, paymentMethodId] = form.paymentMethod.split(":");
+
+    if (form.type === "TRANSFERENCIA") {
+      if (!form.destinationAccount) {
+        setError("Selecciona la cuenta destino");
+        return;
+      }
+      if (form.destinationAccount === paymentMethodId) {
+        setError("La cuenta destino debe ser distinta");
+        return;
+      }
+    }
+
+    setLoading(true);
+    setError("");
 
     try {
       const res = await fetch("/api/transactions", {
@@ -101,6 +115,7 @@ export default function TransactionModal({ accounts, creditCards, categories, on
           amount: parseFloat(form.amount),
           paymentMethodId,
           paymentMethodType,
+          destinationAccountId: form.type === "TRANSFERENCIA" ? form.destinationAccount : undefined,
           installments: parseInt(form.installments || "1"),
           date: form.date,
         }),
@@ -121,12 +136,17 @@ export default function TransactionModal({ accounts, creditCards, categories, on
 
   const isGasto = form.type === "GASTO";
   const isIngreso = form.type === "INGRESO";
+  const isTransferencia = form.type === "TRANSFERENCIA";
 
-  const amountColor = isIngreso
-    ? "text-green-500" // we keep tailwind colors for semantic semantic variants like text-green-500, but they're not fully var themed yet unless we map them. But we have --success and --danger.
-    : isGasto
-    ? "text-red-500"
-    : "";
+  const amountColor = isGasto ? "var(--danger)" : isIngreso ? "var(--success)" : "var(--accent)";
+
+  const typeOptions: { value: "GASTO" | "INGRESO" | "TRANSFERENCIA"; label: string; color: string; fg: string }[] = [
+    { value: "GASTO", label: "Gasto", color: "var(--danger)", fg: "white" },
+    { value: "INGRESO", label: "Ingreso", color: "var(--success)", fg: "white" },
+    { value: "TRANSFERENCIA", label: "Transferencia", color: "var(--accent)", fg: "var(--accent-fg)" },
+  ];
+
+  const originAccountId = form.paymentMethod.startsWith("ACCOUNT:") ? form.paymentMethod.split(":")[1] : "";
 
   const inputStyle = { background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-primary)" };
   const inputBase = "w-full text-sm border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-gray-300 transition-all";
@@ -157,20 +177,32 @@ export default function TransactionModal({ accounts, creditCards, categories, on
 
         <form onSubmit={handleSubmit} className="px-5 pb-6 space-y-5">
 
-          {/* ── Monto + Toggle tipo ─────────────────────────────── */}
-          <div className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "var(--bg-surface-2)" }}>
-            {/* [-] Gasto */}
-            <button
-              type="button"
-              onClick={() => setType("GASTO")}
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-lg leading-none font-bold shrink-0 transition-all border-2`}
-              style={isGasto
-                ? { background: "var(--danger)", borderColor: "var(--danger)", color: "white" }
-                : { background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-muted)" }}
+          {/* ── Tipo (segmentado) + Monto ───────────────────────── */}
+          <div className="rounded-2xl px-4 py-3 space-y-3" style={{ background: "var(--bg-surface-2)" }}>
+            {/* Control segmentado de 3 opciones */}
+            <div
+              className="grid grid-cols-3 gap-1 p-1 rounded-xl"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
             >
-              −
-            </button>
+              {typeOptions.map((opt) => {
+                const active = form.type === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setType(opt.value)}
+                    className="text-xs font-semibold py-1.5 rounded-lg transition-all"
+                    style={active
+                      ? { background: opt.color, color: opt.fg }
+                      : { background: "transparent", color: "var(--text-muted)" }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
 
+            {/* Monto */}
             <input
               ref={amountRef}
               type="number"
@@ -179,21 +211,9 @@ export default function TransactionModal({ accounts, creditCards, categories, on
               value={form.amount}
               onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
               placeholder="0"
-              className="flex-1 text-3xl leading-tight font-bold bg-transparent outline-none text-center"
-              style={{ minWidth: 0, color: isGasto ? "var(--danger)" : isIngreso ? "var(--success)" : "var(--text-primary)" }}
+              className="w-full text-3xl leading-tight font-bold bg-transparent outline-none text-center"
+              style={{ minWidth: 0, color: amountColor }}
             />
-
-            {/* [+] Ingreso */}
-            <button
-              type="button"
-              onClick={() => setType("INGRESO")}
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-lg leading-none font-bold shrink-0 transition-all border-2`}
-              style={isIngreso
-                ? { background: "var(--success)", borderColor: "var(--success)", color: "white" }
-                : { background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-muted)" }}
-            >
-              +
-            </button>
           </div>
 
           {/* ── Descripción ─────────────────────────────────────── */}
@@ -207,6 +227,7 @@ export default function TransactionModal({ accounts, creditCards, categories, on
           />
 
           {/* ── Categorías planas ───────────────────────────────── */}
+          {!isTransferencia && (
           <div>
             <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-2" style={{ color: "var(--text-muted)" }}>Categoría</p>
             {flatCategories.length === 0 ? (
@@ -234,11 +255,12 @@ export default function TransactionModal({ accounts, creditCards, categories, on
               </div>
             )}
           </div>
+          )}
 
           {/* ── Medio de pago + Fecha ──────────────────────────── */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Medio de pago</p>
+              <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>{isTransferencia ? "Cuenta origen" : "Medio de pago"}</p>
               <select
                 value={form.paymentMethod}
                 onChange={(e) => setForm((f) => ({ ...f, paymentMethod: e.target.value }))}
@@ -271,6 +293,26 @@ export default function TransactionModal({ accounts, creditCards, categories, on
               />
             </div>
           </div>
+
+          {/* ── Cuenta destino (solo transferencia) ─────────────── */}
+          {isTransferencia && (
+            <div>
+              <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Cuenta destino</p>
+              <select
+                value={form.destinationAccount}
+                onChange={(e) => setForm((f) => ({ ...f, destinationAccount: e.target.value }))}
+                className={inputBase}
+                style={inputStyle}
+              >
+                <option value="" disabled>Selecciona...</option>
+                {accounts
+                  .filter((acc) => acc.id !== originAccountId)
+                  .map((acc) => (
+                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  ))}
+              </select>
+            </div>
+          )}
 
           {/* ── Cuotas (solo TC) ─────────────────────────────────── */}
           {form.paymentMethod.startsWith("CREDIT_CARD") && (

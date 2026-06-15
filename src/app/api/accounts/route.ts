@@ -10,11 +10,20 @@ export async function GET() {
       .prepare(
         `SELECT id, name, type, currency, status, createdAt, updatedAt,
                 initialBalance,
-                (initialBalance + COALESCE((
-                  SELECT SUM(CASE WHEN type = 'INGRESO' THEN amount ELSE -amount END)
-                  FROM fact_transacciones
-                  WHERE accountId = c.id
-                ), 0)) AS currentBalance
+                (initialBalance
+                 + COALESCE((
+                     SELECT SUM(CASE WHEN type = 'INGRESO' THEN amount
+                                     WHEN type IN ('GASTO','TRANSFERENCIA') THEN -amount
+                                     ELSE 0 END)
+                     FROM fact_transacciones
+                     WHERE accountId = c.id
+                   ), 0)
+                 + COALESCE((
+                     SELECT SUM(amount)
+                     FROM fact_transacciones
+                     WHERE destinationAccountId = c.id AND type = 'TRANSFERENCIA'
+                   ), 0)
+                ) AS currentBalance
          FROM dim_cuentas c
          WHERE status = 'ACTIVA'
          ORDER BY type, name`

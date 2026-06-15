@@ -10,6 +10,20 @@ export async function PATCH(
     const body = await request.json();
     const { name, bank, totalLimit, closingDay, paymentDay } = body;
 
+    if (typeof name !== "string" || !name.trim() || typeof bank !== "string" || !bank.trim()) {
+      return Response.json({ error: "Nombre y banco son requeridos" }, { status: 400 });
+    }
+    const limitNum = Number(totalLimit);
+    if (!Number.isFinite(limitNum) || limitNum <= 0) {
+      return Response.json({ error: "El cupo total debe ser un número mayor a 0" }, { status: 400 });
+    }
+    const closing = Number(closingDay);
+    const payment = Number(paymentDay);
+    if (!Number.isInteger(closing) || closing < 1 || closing > 31 ||
+        !Number.isInteger(payment) || payment < 1 || payment > 31) {
+      return Response.json({ error: "Los días de corte y pago deben estar entre 1 y 31" }, { status: 400 });
+    }
+
     const existing = db
       .prepare(`SELECT id FROM dim_tarjetas_credito WHERE id = ?`)
       .get(id);
@@ -30,9 +44,9 @@ export async function PATCH(
       id,
       name: name.trim(),
       bank: bank.trim(),
-      totalLimit: Number(totalLimit),
-      closingDay: Number(closingDay),
-      paymentDay: Number(paymentDay),
+      totalLimit: limitNum,
+      closingDay: closing,
+      paymentDay: payment,
       now: new Date().toISOString(),
     });
 

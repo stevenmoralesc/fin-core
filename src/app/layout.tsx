@@ -3,8 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/layout/Sidebar";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
-import { db } from "@/lib/db";
-import type { Account, CreditCard, SystemConfig } from "@/lib/types";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,61 +18,11 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-function getAccounts(): Account[] {
-  return db
-    .prepare(
-      `SELECT id, name, type, initialBalance, currency, status, createdAt, updatedAt
-       FROM dim_cuentas WHERE status = 'ACTIVA' ORDER BY type, name`
-    )
-    .all() as Account[];
-}
-
-function getCreditCards(): CreditCard[] {
-  return db
-    .prepare(
-      `SELECT id, name, bank, totalLimit, closingDay, paymentDay, createdAt, updatedAt
-       FROM dim_tarjetas_credito ORDER BY name`
-    )
-    .all() as CreditCard[];
-}
-
-function getCategories(): import("@/lib/types").CategoriesByType {
-  const rows = db
-    .prepare(
-      `SELECT category, suggestedBudget, transactionType, icon
-       FROM sys_config ORDER BY transactionType, category`
-    )
-    .all() as import("@/lib/types").SystemConfig[];
-
-  const result: import("@/lib/types").CategoriesByType = {
-    GASTO: {},
-    INGRESO: {},
-    TRANSFERENCIA: {},
-  };
-
-  for (const row of rows) {
-    const type = row.transactionType ?? "GASTO";
-    if (!result[type]) result[type as keyof typeof result] = {};
-    if (!result[type][row.category]) result[type][row.category] = [];
-    result[type][row.category].push({
-      suggestedBudget: row.suggestedBudget,
-      icon: row.icon,
-    });
-  }
-  return result;
-}
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [accounts, creditCards, categories] = await Promise.all([
-    Promise.resolve(getAccounts()),
-    Promise.resolve(getCreditCards()),
-    Promise.resolve(getCategories()),
-  ]);
-
   return (
     <html lang="es" className={inter.variable} suppressHydrationWarning>
       <head>
@@ -91,11 +39,11 @@ export default async function RootLayout({
       >
         <ThemeProvider>
           <div
-            className="flex h-screen w-screen overflow-hidden"
+            className="flex h-screen w-full overflow-hidden"
             style={{ background: "var(--bg-base)" }}
           >
             <Sidebar />
-            <main className="flex-1 h-full overflow-y-auto p-6 md:p-10 flex flex-col gap-6">
+            <main className="flex-1 h-full overflow-y-auto flex flex-col">
               {children}
             </main>
           </div>

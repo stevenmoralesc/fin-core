@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { randomUUID } from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -23,25 +24,36 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, bank, totalLimit, closingDay, paymentDay } = body;
 
-    if (!name || !bank || !totalLimit || !closingDay || !paymentDay) {
-      return Response.json({ error: "Faltan campos requeridos" }, { status: 400 });
+    if (typeof name !== "string" || !name.trim() || typeof bank !== "string" || !bank.trim()) {
+      return Response.json({ error: "Nombre y banco son requeridos" }, { status: 400 });
     }
 
-    const { randomUUID } = require("crypto");
+    const limitNum = Number(totalLimit);
+    if (!Number.isFinite(limitNum) || limitNum <= 0) {
+      return Response.json({ error: "El cupo total debe ser un número mayor a 0" }, { status: 400 });
+    }
+
+    const closing = Number(closingDay);
+    const payment = Number(paymentDay);
+    if (!Number.isInteger(closing) || closing < 1 || closing > 31 ||
+        !Number.isInteger(payment) || payment < 1 || payment > 31) {
+      return Response.json({ error: "Los días de corte y pago deben estar entre 1 y 31" }, { status: 400 });
+    }
+
     const id = randomUUID();
     const now = new Date().toISOString();
 
     db.prepare(`
-      INSERT INTO dim_tarjetas_credito 
+      INSERT INTO dim_tarjetas_credito
       (id, name, bank, totalLimit, closingDay, paymentDay, createdAt, updatedAt)
       VALUES (@id, @name, @bank, @totalLimit, @closingDay, @paymentDay, @now, @now)
     `).run({
       id,
-      name,
-      bank,
-      totalLimit: Number(totalLimit),
-      closingDay: Number(closingDay),
-      paymentDay: Number(paymentDay),
+      name: name.trim(),
+      bank: bank.trim(),
+      totalLimit: limitNum,
+      closingDay: closing,
+      paymentDay: payment,
       now,
     });
 

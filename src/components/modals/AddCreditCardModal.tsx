@@ -40,8 +40,8 @@ export default function AddCreditCardModal({ onClose }: AddCreditCardModalProps)
       }
       router.refresh();
       onClose();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err) {
+      alert("Error: " + (err as Error).message);
     } finally {
       setLoading(false);
     }

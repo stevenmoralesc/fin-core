@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, category, amount, description, paymentMethodId, paymentMethodType, installments, date } = body;
+    const { type, category, amount, description, paymentMethodId, paymentMethodType, installments, date, destinationAccountId: destAccountIdInput } = body;
 
     // Validación básica
     if (!type || !category || amount === undefined || !paymentMethodId || !paymentMethodType) {
@@ -58,66 +58,99 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "type debe ser INGRESO, GASTO o TRANSFERENCIA" }, { status: 400 });
     }
 
+    const amountNum = Number(amount);
+    if (!Number.isFinite(amountNum) || amountNum <= 0) {
+      return Response.json({ error: "El monto debe ser un número mayor a 0" }, { status: 400 });
+    }
+
     const id = randomUUID();
     const now = new Date().toISOString();
     const d = new Date();
-    const txDate = date ?? (d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'));
+    // Normalizar fecha a YYYY-MM-DD (local). Si llega un ISO completo, recortar.
+    const txDate = (typeof date === "string" && /^\d{4}-\d{2}-\d{2}/.test(date))
+      ? date.slice(0, 10)
+      : (d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'));
 
-    let accountId = null;
-    let debtReferenceId = null;
+    let accountId: string | null = null;
+    let debtReferenceId: string | null = null;
+    let destinationAccountId: string | null = null;
+    let numInstallments = 1;
 
     if (paymentMethodType === "CREDIT_CARD") {
       if (type !== "GASTO") {
         return Response.json({ error: "Las tarjetas de crédito solo se pueden usar para GASTOS" }, { status: 400 });
       }
-      
-      const installmentId = randomUUID();
-      const numInstallments = parseInt(installments || "1");
 
-      // Crear la compra a cuotas
-      db.prepare(`
-        INSERT INTO fact_compras_cuotas
-          (id, purchaseDate, establishment, totalAmount, totalMonths, paidMonths, monthlyInterest, status, creditCardId, createdAt, updatedAt)
-        VALUES
-          (@id, @purchaseDate, @establishment, @totalAmount, @totalMonths, @paidMonths, @monthlyInterest, @status, @creditCardId, @createdAt, @updatedAt)
-      `).run({
-        id: installmentId,
-        purchaseDate: txDate,
-        establishment: description || "Compra con TC",
-        totalAmount: Number(amount),
-        totalMonths: numInstallments,
-        paidMonths: 0,
-        monthlyInterest: 0,
-        status: "VIGENTE",
-        creditCardId: paymentMethodId,
-        createdAt: now,
-        updatedAt: now,
-      });
-
-      debtReferenceId = installmentId;
+      numInstallments = parseInt(installments ?? "1", 10);
+      if (!Number.isInteger(numInstallments) || numInstallments < 1) {
+        return Response.json({ error: "El número de cuotas debe ser un entero mayor o igual a 1" }, { status: 400 });
+      }
+      debtReferenceId = randomUUID();
     } else {
       accountId = paymentMethodId;
     }
 
-    // Crear la transacción
-    db.prepare(`
-      INSERT INTO fact_transacciones
-        (id, date, type, category, amount, description, accountId, debtReferenceId, createdAt, updatedAt)
-      VALUES
-        (@id, @date, @type, @category, @amount, @description, @accountId, @debtReferenceId, @createdAt, @updatedAt)
-    `).run({
-      id,
-      date: txDate,
-      type,
-      category,
+    // Transferencia: requiere cuenta destino distinta del origen (doble asiento).
+    if (type === "TRANSFERENCIA") {
+      if (paymentMethodType !== "ACCOUNT") {
+        return Response.json({ error: "Una transferencia debe salir de una cuenta" }, { status: 400 });
+      }
+      if (!destAccountIdInput || typeof destAccountIdInput !== "string") {
+        return Response.json({ error: "Selecciona la cuenta destino" }, { status: 400 });
+      }
+      if (destAccountIdInput === accountId) {
+        return Response.json({ error: "La cuenta destino debe ser distinta de la origen" }, { status: 400 });
+      }
+      const destExists = db.prepare(`SELECT id FROM dim_cuentas WHERE id = ?`).get(destAccountIdInput);
+      if (!destExists) {
+        return Response.json({ error: "La cuenta destino no existe" }, { status: 400 });
+      }
+      destinationAccountId = destAccountIdInput;
+    }
 
-      amount: Number(amount),
-      description: description ?? null,
-      accountId,
-      debtReferenceId,
-      createdAt: now,
-      updatedAt: now,
+    // Doble escritura atómica: compra a cuotas (si aplica) + transacción.
+    const insertAll = db.transaction(() => {
+      if (debtReferenceId) {
+        db.prepare(`
+          INSERT INTO fact_compras_cuotas
+            (id, purchaseDate, establishment, totalAmount, totalMonths, paidMonths, monthlyInterest, status, creditCardId, createdAt, updatedAt)
+          VALUES
+            (@id, @purchaseDate, @establishment, @totalAmount, @totalMonths, @paidMonths, @monthlyInterest, @status, @creditCardId, @createdAt, @updatedAt)
+        `).run({
+          id: debtReferenceId,
+          purchaseDate: txDate,
+          establishment: description || "Compra con TC",
+          totalAmount: amountNum,
+          totalMonths: numInstallments,
+          paidMonths: 0,
+          monthlyInterest: 0,
+          status: "VIGENTE",
+          creditCardId: paymentMethodId,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      db.prepare(`
+        INSERT INTO fact_transacciones
+          (id, date, type, category, amount, description, accountId, destinationAccountId, debtReferenceId, createdAt, updatedAt)
+        VALUES
+          (@id, @date, @type, @category, @amount, @description, @accountId, @destinationAccountId, @debtReferenceId, @createdAt, @updatedAt)
+      `).run({
+        id,
+        date: txDate,
+        type,
+        category,
+        amount: amountNum,
+        description: description ?? null,
+        accountId,
+        destinationAccountId,
+        debtReferenceId,
+        createdAt: now,
+        updatedAt: now,
+      });
     });
+    insertAll();
 
     const created = db
       .prepare("SELECT * FROM fact_transacciones WHERE id = ?")

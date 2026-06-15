@@ -92,8 +92,8 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
 
       router.refresh();
       onClose();
-    } catch (error: any) {
-      alert("Error: " + error.message);
+    } catch (error) {
+      alert("Error: " + (error as Error).message);
     } finally {
       setLoading(false);
     }

@@ -45,8 +45,8 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
       }
       router.refresh();
       onClose();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err) {
+      alert("Error: " + (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -62,8 +62,8 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
       }
       router.refresh();
       onClose();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err) {
+      alert("Error: " + (err as Error).message);
     } finally {
       setDeleting(false);
     }

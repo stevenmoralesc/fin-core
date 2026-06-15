@@ -7,17 +7,21 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
     const { name, type, initialBalance } = body;
 
-    if (!name || !type || initialBalance === undefined) {
-      return Response.json({ error: "Faltan datos requeridos" }, { status: 400 });
+    if (typeof name !== "string" || !name.trim() || typeof type !== "string" || !type) {
+      return Response.json({ error: "Nombre y tipo son requeridos" }, { status: 400 });
+    }
+    const balanceNum = Number(initialBalance);
+    if (!Number.isFinite(balanceNum)) {
+      return Response.json({ error: "El saldo inicial debe ser numérico" }, { status: 400 });
     }
 
     const now = new Date().toISOString();
 
     db.prepare(`
-      UPDATE dim_cuentas 
+      UPDATE dim_cuentas
       SET name = @name, type = @type, initialBalance = @initialBalance, updatedAt = @now
       WHERE id = @id
-    `).run({ id, name: name.trim(), type, initialBalance: Number(initialBalance), now });
+    `).run({ id, name: name.trim(), type, initialBalance: balanceNum, now });
 
     return Response.json({ success: true });
   } catch (error) {

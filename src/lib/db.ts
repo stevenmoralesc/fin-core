@@ -12,7 +12,6 @@ import path from "path";
 const DB_PATH = path.join(process.cwd(), "dev.db");
 
 declare global {
-  // eslint-disable-next-line no-var
   var __db: Database.Database | undefined;
 }
 
@@ -31,10 +30,21 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // ── Migraciones inline (siempre se evalúan en cada hot-reload) ────
-// Añade transactionType a sys_config si no existe (idempotente)
+// Añade columnas faltantes a sys_config si no existen (idempotente).
+// Nota: estas columnas no están en las migraciones formales de Prisma;
+// esto garantiza que una BD recreada siga funcionando.
 const _cols = db.prepare("PRAGMA table_info(sys_config)").all() as { name: string }[];
 if (!_cols.find((c) => c.name === "transactionType")) {
   db.prepare(
     `ALTER TABLE sys_config ADD COLUMN transactionType TEXT NOT NULL DEFAULT 'GASTO'`
   ).run();
+}
+if (!_cols.find((c) => c.name === "icon")) {
+  db.prepare(`ALTER TABLE sys_config ADD COLUMN icon TEXT`).run();
+}
+
+// Añade destinationAccountId a fact_transacciones (cuenta destino de transferencias).
+const _txCols = db.prepare("PRAGMA table_info(fact_transacciones)").all() as { name: string }[];
+if (!_txCols.find((c) => c.name === "destinationAccountId")) {
+  db.prepare(`ALTER TABLE fact_transacciones ADD COLUMN destinationAccountId TEXT`).run();
 }

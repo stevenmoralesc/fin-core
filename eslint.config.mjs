@@ -12,6 +12,16 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "src/generated/**",
+    "check.js",
+    "fix.js",
+    "fix2.js",
+    "force.js",
+    "migrate.js",
+    "refactor.js",
+    "fix-dates.js",
+    "fix-dates-loop.js",
+    "prisma/*.mjs",
   ]),
 ]);
 

@@ -50,8 +50,8 @@ export default function EditTransactionModal({
       router.refresh();
       onSuccess?.();
       onClose();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err) {
+      alert("Error: " + (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -64,8 +64,8 @@ export default function EditTransactionModal({
       router.refresh();
       onSuccess?.();
       onClose();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err) {
+      alert("Error: " + (err as Error).message);
     } finally {
       setDeleting(false);
     }
@@ -73,10 +73,8 @@ export default function EditTransactionModal({
 
   const inputClass =
     "w-full border-b py-2.5 text-sm focus:outline-none transition-colors bg-transparent";
-  const inputStyle = { color: "var(--text-primary)", borderColor: "var(--border)" };
   const labelClass =
     "block text-[10px] leading-none font-bold uppercase tracking-wide mb-1";
-  const labelStyle = { color: "var(--text-muted)" };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>

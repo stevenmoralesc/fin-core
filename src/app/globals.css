@@ -130,15 +130,11 @@
 
 /* ─────────────────────────────────────────────────────────────────
    Base resets
+   NOTA: No agregamos un reset universal de margin/padding aqui.
+   El preflight de Tailwind v4 (capa base) ya lo hace. Un reset sin
+   capa sobrescribiria TODAS las utilidades de padding y margin,
+   porque los estilos sin capa ganan a cualquier capa en la cascada.
 ───────────────────────────────────────────────────────────────── */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 html {
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, CreditCard, Wallet, PieChart, Settings, Bell, ChevronLeft, ChevronRight } from "lucide-react";
+import { BarChart3, CreditCard, Wallet, PieChart, Settings, Bell, ChevronLeft, ChevronRight, ArrowLeftRight } from "lucide-react";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 
 export default function Sidebar() {
@@ -11,6 +11,7 @@ export default function Sidebar() {
 
   const links = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
+    { name: "Movimientos", href: "/transacciones", icon: ArrowLeftRight },
     { name: "Tarjetas", href: "/tarjetas", icon: CreditCard },
     { name: "Cuentas", href: "/cuentas", icon: Wallet },
     { name: "Presupuesto", href: "/presupuesto", icon: PieChart },

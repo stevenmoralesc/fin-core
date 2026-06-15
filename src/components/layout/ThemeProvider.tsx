@@ -34,6 +34,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = (localStorage.getItem("theme") as Theme | null) ?? "system";
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hidratación del tema desde localStorage
     setThemeState(stored);
     applyTheme(stored);
 

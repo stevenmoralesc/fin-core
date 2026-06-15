@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Wallet, CreditCard, ShoppingCart, ArrowUpRight, ArrowDownLeft, MoreHorizontal, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, MoreHorizontal, ChevronDown, ChevronRight } from "lucide-react";
 import EditTransactionModal from "@/components/modals/EditTransactionModal";
 import TransactionModal from "@/components/modals/TransactionModal";
-import type { DashboardSummary, CategoriesByType, Transaction } from "@/lib/types";
+import type { DashboardSummary, CategoriesByType, Transaction, Account } from "@/lib/types";
 
 // ── Helpers ───────────────────────────────────────────────────
 function formatCOP(value: number, showSign = true): string {
@@ -188,6 +189,7 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
 
   useEffect(() => {
     let isMounted = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading inicial al cambiar de periodo
     setLoading(true);
     fetch(`/api/dashboard?periodo=${periodo}`)
       .then((res) => res.json())
@@ -203,26 +205,52 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
   // ── Skeleton ─────────────────────────────────────────────────
   if (!data) {
     return (
-      <div className="w-full flex flex-col gap-8 animate-pulse">
-        <div className="h-9 w-48 bg-gray-200 rounded-lg" />
-        <div className="flex gap-3">
-          {[1, 2, 3].map((i) => <div key={i} className="h-7 w-24 bg-gray-200 rounded-xl" />)}
+      <div className="w-full flex flex-col min-h-full animate-pulse">
+        <div className="flex gap-2 px-6 md:px-10 py-3 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+          {[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-7 w-28 bg-gray-200 rounded-xl" />)}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => <div key={i} className="h-36 bg-gray-200 rounded-2xl" />)}
+        <div className="flex flex-col gap-8 px-6 md:px-10 py-8">
+          <div className="h-9 w-48 bg-gray-200 rounded-lg" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => <div key={i} className="h-36 bg-gray-200 rounded-2xl" />)}
+          </div>
+          <div className="h-64 bg-gray-200 rounded-2xl" />
         </div>
-        <div className="h-64 bg-gray-200 rounded-2xl" />
       </div>
     );
   }
 
   return (
-    <div className="w-full flex flex-col gap-8">
+    <div className="w-full flex flex-col min-h-full">
 
-      {/* ── BLOQUE 1: HEADER ──────────────────────────────────── */}
+      {/* ── BLOQUE 1: CUENTAS (PILLS) ─────────────────────────── */}
+      <div
+        className="flex flex-wrap gap-2 w-full px-6 md:px-10 pt-6 pb-4 border-b"
+        style={{ borderColor: "var(--border-subtle)" }}
+      >
+        {data.cuentasActivas?.map((acc) => (
+          <div
+            key={acc.id}
+            className="rounded-xl px-3 py-1.5 text-xs flex items-center gap-2 border"
+            style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}
+          >
+            <Wallet size={12} className="shrink-0" style={{ color: "var(--text-muted)" }} />
+            <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{acc.name}</span>
+            <span className="font-bold" style={{ color: "var(--text-primary)" }}>{formatCOPShort((acc as Account & { currentBalance?: number }).currentBalance ?? 0)}</span>
+          </div>
+        ))}
+        {loading && (
+          <span className="text-xs italic self-center" style={{ color: "var(--text-muted)" }}>Actualizando...</span>
+        )}
+      </div>
+
+      {/* ── contenido principal con padding ──────────────────── */}
+      <div className="flex flex-col gap-8 px-6 md:px-10 py-8">
+
+      {/* ── BLOQUE 2: HEADER ──────────────────────────────────── */}
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-primary">Resumen</h1>
+          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Resumen</h1>
           <MonthPickerPopover periodo={periodo} onChange={setPeriodo} />
         </div>
         <button
@@ -233,24 +261,6 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
           <span className="text-base leading-none">+</span>
           Nueva
         </button>
-      </div>
-
-      {/* ── BLOQUE 2: CUENTAS (PILLS) ─────────────────────────── */}
-      <div className="flex flex-wrap gap-2 w-full pb-4 border-b" style={{ borderColor: "var(--border-subtle)" }}>
-        {data.cuentasActivas?.map((acc) => (
-          <div
-            key={acc.id}
-            className="rounded-xl px-3 py-1.5 text-xs flex items-center gap-2 border"
-            style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}
-          >
-            <Wallet size={12} className="shrink-0" style={{ color: "var(--text-muted)" }} />
-            <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{acc.name}</span>
-            <span className="font-bold" style={{ color: "var(--text-primary)" }}>{formatCOPShort((acc as any).currentBalance ?? 0)}</span>
-          </div>
-        ))}
-        {loading && (
-          <span className="text-xs italic self-center" style={{ color: "var(--text-muted)" }}>Actualizando...</span>
-        )}
       </div>
 
       {/* ── BLOQUE 3: KPI GRID ────────────────────────────────── */}
@@ -289,6 +299,16 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
                 : "Sin movimientos en este periodo"}
             </p>
           </div>
+          <Link
+            href="/transacciones"
+            className="flex items-center gap-1 text-xs font-semibold transition-colors shrink-0"
+            style={{ color: "#6366f1" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#4f46e5")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#6366f1")}
+          >
+            Ver todas
+            <ChevronRight size={14} />
+          </Link>
         </div>
 
         {(!data.recentTransactions || data.recentTransactions.length === 0) ? (
@@ -305,6 +325,7 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
               <div
                 key={tx.id}
                 className="flex items-center gap-4 px-6 py-4 transition-colors group cursor-default"
+                style={{ borderColor: "var(--border-subtle)" }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-2)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
@@ -348,6 +369,8 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
           </div>
         )}
       </div>
+
+      </div>{/* fin contenido principal */}
 
       {/* ── MODALES ───────────────────────────────────────────── */}
       {editingTx && (

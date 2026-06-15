@@ -24,11 +24,20 @@ function getAccountsWithStats(): AccountWithStats[] {
       .prepare(
         `SELECT
            COALESCE(SUM(CASE WHEN type = 'INGRESO' THEN amount ELSE 0 END), 0) AS totalIngresos,
-           COALESCE(SUM(CASE WHEN type = 'GASTO'   THEN amount ELSE 0 END), 0) AS totalGastos
+           COALESCE(SUM(CASE WHEN type = 'GASTO'   THEN amount ELSE 0 END), 0) AS totalGastos,
+           COALESCE(SUM(CASE WHEN type = 'TRANSFERENCIA' THEN amount ELSE 0 END), 0) AS totalTransferOut
          FROM fact_transacciones
          WHERE accountId = ?`
       )
-      .get(acc.id) as { totalIngresos: number; totalGastos: number };
+      .get(acc.id) as { totalIngresos: number; totalGastos: number; totalTransferOut: number };
+
+    const transferInRow = db
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS totalTransferIn
+         FROM fact_transacciones
+         WHERE destinationAccountId = ? AND type = 'TRANSFERENCIA'`
+      )
+      .get(acc.id) as { totalTransferIn: number };
 
     const recentTransactions = db
       .prepare(
@@ -41,7 +50,8 @@ function getAccountsWithStats(): AccountWithStats[] {
       .all(acc.id) as AccountWithStats["recentTransactions"];
 
     const currentBalance =
-      acc.initialBalance + balanceRow.totalIngresos - balanceRow.totalGastos;
+      acc.initialBalance + balanceRow.totalIngresos - balanceRow.totalGastos
+      - balanceRow.totalTransferOut + transferInRow.totalTransferIn;
 
     return {
       ...acc,
@@ -56,5 +66,9 @@ function getAccountsWithStats(): AccountWithStats[] {
 export default async function CuentasPage() {
   const accounts = await Promise.resolve(getAccountsWithStats());
 
-  return <AccountsView initialAccounts={accounts} />;
+  return (
+    <div className="px-6 md:px-10 py-8">
+      <AccountsView initialAccounts={accounts} />
+    </div>
+  );
 }

@@ -139,7 +139,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
   return (
     <div className="p-6 md:p-10 space-y-8 max-w-7xl mx-auto">
       {/* ── Selector de Tarjetas ── */}
-      <div className="flex gap-2 overflow-x-auto py-2 -my-2 items-center">
+      <div className="flex gap-2 overflow-x-auto pb-6 items-center">
         {initialData.map((d, index) => (
           <button
             key={d.card.id}
@@ -261,14 +261,14 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
             </div>
 
             {/* Table Body */}
-            <div className="divide-y divide-gray-50 text-sm">
+            <div className="divide-y text-sm" style={{ borderColor: "var(--border-subtle)" }}>
               {vigentes.map((inst) => {
                 const monthly = inst.totalAmount / inst.totalMonths;
                 const pct = (inst.paidMonths / inst.totalMonths) * 100;
                 const remaining = inst.totalMonths - inst.paidMonths;
 
                 return (
-                  <div key={inst.id} className="grid grid-cols-7 gap-4 items-center px-6 py-5 hover:bg-surface-2/50 transition-colors group">
+                  <div key={inst.id} className="grid grid-cols-7 gap-4 items-center px-6 py-5 hover:bg-surface-2/50 transition-colors group" style={{ borderColor: "var(--border-subtle)" }}>
                     <div className="col-span-2">
                       <p className="font-semibold text-primary truncate">{inst.establishment}</p>
                       <p className="text-xs text-muted mt-0.5">
@@ -342,6 +342,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
               <div
                 key={inst.id}
                 className="px-6 py-4 flex items-center justify-between opacity-70 hover:opacity-100 transition-all"
+                style={{ borderColor: "var(--border-subtle)" }}
                 onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-surface-2)"}
                 onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
               >

@@ -5,31 +5,7 @@ import { RefreshCw, X } from "lucide-react";
 import type { Account, CreditCard as CreditCardType, CategoriesByType } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
-// ── Mapa de emojis por categoría ────────────────────────────────
-const CATEGORY_EMOJI: Record<string, string> = {
-  VIVIENDA: "🏠",
-  ALIMENTACION: "🛒",
-  TRANSPORTE: "🚗",
-  SALUD: "💊",
-  EDUCACION: "📚",
-  ENTRETENIMIENTO: "🎬",
-  ROPA: "👕",
-  MASCOTAS: "🐶",
-  RESTAURANTES: "🍔",
-  TECNOLOGIA: "💻",
-  VIAJES: "✈️",
-  DEPORTES: "🏋️",
-  BELLEZA: "💄",
-  SERVICIOS: "⚡",
-  INGRESO: "💰",
-  SALARIO: "💼",
-  TRANSFERENCIA: "↔️",
-};
-
-function getCategoryEmoji(cat: string): string {
-  const key = cat.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  return CATEGORY_EMOJI[key] ?? "📂";
-}
+// ── Los iconos de categorías provienen de la base de datos (sys_config) ──
 
 interface ModalProps {
   accounts: Account[];
@@ -236,7 +212,7 @@ export default function TransactionModal({ accounts, creditCards, categories, on
               <div className="grid grid-cols-3 gap-2">
                 {flatCategories.map((cat) => {
                   const isSelected = form.category === cat;
-                  const catIcon = categoriesForType[cat]?.[0]?.icon || getCategoryEmoji(cat);
+                  const catIcon = categoriesForType[cat]?.[0]?.icon || "📂";
                   return (
                     <button
                       key={cat}

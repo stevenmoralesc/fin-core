@@ -25,13 +25,13 @@ export default async function HomePage() {
   const categories = await Promise.resolve(
     (() => {
       const rows = db
-        .prepare(`SELECT category, suggestedBudget, transactionType FROM sys_config ORDER BY transactionType, category`)
+        .prepare(`SELECT category, suggestedBudget, transactionType, icon FROM sys_config ORDER BY transactionType, category`)
         .all() as import("@/lib/types").SystemConfig[];
       const result: import("@/lib/types").CategoriesByType = { GASTO: {}, INGRESO: {}, TRANSFERENCIA: {} };
       for (const row of rows) {
         const t = row.transactionType ?? "GASTO";
         if (!result[t][row.category]) result[t][row.category] = [];
-        result[t][row.category].push({ suggestedBudget: row.suggestedBudget });
+        result[t][row.category].push({ suggestedBudget: row.suggestedBudget, icon: row.icon });
       }
       return result;
     })()

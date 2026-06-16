@@ -8,6 +8,7 @@
 
 import Database from "better-sqlite3";
 import path from "path";
+import { runMigrations } from "./migrate";
 
 const DB_PATH = path.join(process.cwd(), "dev.db");
 
@@ -19,6 +20,9 @@ function createDb(): Database.Database {
   const db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
+  // Esquema gestionado por archivos migrations/*.sql (ver src/lib/migrate.ts).
+  // Se ejecuta una sola vez por conexión, al crearla.
+  runMigrations(db);
   return db;
 }
 
@@ -27,24 +31,4 @@ export const db: Database.Database =
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.__db = db;
-}
-
-// ── Migraciones inline (siempre se evalúan en cada hot-reload) ────
-// Añade columnas faltantes a sys_config si no existen (idempotente).
-// Nota: estas columnas no están en las migraciones formales de Prisma;
-// esto garantiza que una BD recreada siga funcionando.
-const _cols = db.prepare("PRAGMA table_info(sys_config)").all() as { name: string }[];
-if (!_cols.find((c) => c.name === "transactionType")) {
-  db.prepare(
-    `ALTER TABLE sys_config ADD COLUMN transactionType TEXT NOT NULL DEFAULT 'GASTO'`
-  ).run();
-}
-if (!_cols.find((c) => c.name === "icon")) {
-  db.prepare(`ALTER TABLE sys_config ADD COLUMN icon TEXT`).run();
-}
-
-// Añade destinationAccountId a fact_transacciones (cuenta destino de transferencias).
-const _txCols = db.prepare("PRAGMA table_info(fact_transacciones)").all() as { name: string }[];
-if (!_txCols.find((c) => c.name === "destinationAccountId")) {
-  db.prepare(`ALTER TABLE fact_transacciones ADD COLUMN destinationAccountId TEXT`).run();
 }

@@ -13,6 +13,13 @@
 # testing
 /coverage
 
+# database (datos financieros personales — nunca versionar)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
 # next.js
 /.next/
 /out/

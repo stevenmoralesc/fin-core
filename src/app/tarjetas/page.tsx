@@ -5,6 +5,7 @@
 
 import { db } from "@/lib/db";
 import CreditCardView from "@/components/views/CreditCardView";
+import { monthlyPayment, outstandingPrincipal } from "@/lib/credit";
 import type { Account, CreditCard, InstallmentPurchase, CreditCardDetails } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -42,15 +43,10 @@ function getCreditCardDetails(): CreditCardDetails[] {
 
     for (const inst of installments) {
       if (inst.status === "VIGENTE") {
-        const remaining = inst.totalMonths - inst.paidMonths;
-        const monthly =
-          inst.monthlyInterest > 0
-            ? (inst.totalAmount * (inst.monthlyInterest / 100)) /
-              (1 - Math.pow(1 + inst.monthlyInterest / 100, -inst.totalMonths))
-            : inst.totalAmount / inst.totalMonths;
-
-        usedLimit += monthly * remaining;
-        nextBillAmount += monthly;
+        // Cupo ocupado = capital pendiente (el interés no consume cupo).
+        usedLimit += outstandingPrincipal(inst);
+        // Próxima factura = suma de las cuotas mensuales vigentes.
+        nextBillAmount += monthlyPayment(inst);
       }
     }
 

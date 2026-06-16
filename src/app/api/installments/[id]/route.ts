@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { monthlyPayment } from "@/lib/credit";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -56,10 +57,7 @@ export async function PATCH(
     const today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
 
     // Valor de la cuota mensual (amortización francesa si hay interés).
-    const interest = purchase.monthlyInterest || 0;
-    const monthly = interest > 0
-      ? (purchase.totalAmount * (interest / 100)) / (1 - Math.pow(1 + interest / 100, -purchase.totalMonths))
-      : purchase.totalAmount / purchase.totalMonths;
+    const monthly = monthlyPayment(purchase);
 
     // Atómico: subir la cuota pagada + registrar el gasto contra la cuenta.
     // El gasto lleva debtReferenceId para excluirse del KPI de "gastos del periodo"

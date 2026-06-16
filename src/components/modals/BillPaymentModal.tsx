@@ -35,8 +35,6 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
   const [loadingBalances, setLoadingBalances] = useState(true);
   const [accountsWithBalance, setAccountsWithBalance] = useState<AccountWithBalance[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id ?? "");
-  const [customAmount, setCustomAmount] = useState(formatCOP(billAmount).replace("$", "$"));
-  const [useCustomAmount, setUseCustomAmount] = useState(false);
 
   // Cargar saldos actuales de las cuentas
   useEffect(() => {
@@ -54,9 +52,7 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
   }, [accounts]);
 
   const selectedAccount = accountsWithBalance.find((a) => a.id === selectedAccountId);
-  const payAmount = useCustomAmount
-    ? Number(customAmount)
-    : billAmount;
+  const payAmount = billAmount;
 
   const insufficientFunds = selectedAccount
     ? selectedAccount.currentBalance < payAmount
@@ -67,22 +63,10 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
     setLoading(true);
 
     try {
-      const d = new Date();
-      const today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
-
-      const res = await fetch("/api/transactions", {
+      const res = await fetch(`/api/credit-cards/${card.id}/pay-bill`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "GASTO",
-          category: "Tarjetas de Crédito",
-
-          amount: payAmount,
-          description: `Pago factura ${card.name} — ${new Date().toLocaleString("es-CO", { month: "long", year: "numeric" })}`,
-          paymentMethodId: selectedAccountId,
-          paymentMethodType: "ACCOUNT",
-          date: today,
-        }),
+        body: JSON.stringify({ accountId: selectedAccountId }),
       });
 
       if (!res.ok) {
@@ -144,34 +128,17 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
             </div>
           </div>
 
-          {/* Monto a pagar */}
+          {/* Monto a pagar (suma de las cuotas del mes) */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-[10px] leading-none font-bold text-muted uppercase tracking-wide">
-                Monto a Pagar
-              </label>
-              <button
-                type="button"
-                onClick={() => setUseCustomAmount(!useCustomAmount)}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
-              >
-                {useCustomAmount ? "Usar total calculado" : "Monto personalizado"}
-              </button>
+            <label className="block text-[10px] leading-none font-bold text-muted uppercase tracking-wide mb-2">
+              Monto a Pagar
+            </label>
+            <div className="py-2.5 border-b border-subtle">
+              <span className="text-base font-bold text-primary">{formatCOP(billAmount)}</span>
             </div>
-            {useCustomAmount ? (
-              <input
-                type="number"
-              step="0.01"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                className="w-full border-b border-base py-2.5 text-primary text-base font-bold focus:outline-none focus:border-gray-800 transition-colors bg-transparent"
-                placeholder="$0"
-              />
-            ) : (
-              <div className="py-2.5 border-b border-subtle">
-                <span className="text-base font-bold text-primary">{formatCOP(billAmount)}</span>
-              </div>
-            )}
+            <p className="text-[11px] text-muted mt-2">
+              Avanza una cuota en todas las compras vigentes de esta tarjeta.
+            </p>
           </div>
 
           {/* Selector de cuenta */}

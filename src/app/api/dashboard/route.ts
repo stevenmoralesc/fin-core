@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { monthlyPayment, outstandingPrincipal } from "@/lib/credit";
 import type { DashboardSummary } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -72,15 +73,8 @@ export async function GET(req: NextRequest) {
     let expenses = 0;
     for (const row of expenseRows) {
       if (row.debtReferenceId && row.status === 'VIGENTE') {
-        if (!row.totalMonths || row.totalMonths <= 0) continue; // evita división por cero
-        const interest = row.monthlyInterest || 0;
-        if (interest > 0) {
-          const r = interest / 100;
-          const n = row.totalMonths;
-          expenses += (row.totalAmount * r) / (1 - Math.pow(1 + r, -n));
-        } else {
-          expenses += row.totalAmount / row.totalMonths;
-        }
+        // Devengo: la cuota del mes de la compra diferida.
+        expenses += monthlyPayment(row);
       } else if (!row.debtReferenceId) {
         expenses += row.amount;
       }
@@ -119,15 +113,8 @@ export async function GET(req: NextRequest) {
       }
 
       for (const inst of installmentsToSum) {
-        if (!inst.totalMonths || inst.totalMonths <= 0) continue; // evita división por cero
-        const remaining = Math.max(0, inst.totalMonths - inst.paidMonths);
-        const monthly =
-          inst.monthlyInterest > 0
-            ? (inst.totalAmount * (inst.monthlyInterest / 100)) /
-              (1 - Math.pow(1 + inst.monthlyInterest / 100, -inst.totalMonths))
-            : inst.totalAmount / inst.totalMonths;
-
-        creditCardUsed += monthly * remaining;
+        // Cupo ocupado = capital pendiente (el interés no consume cupo).
+        creditCardUsed += outstandingPrincipal(inst);
       }
     }
     

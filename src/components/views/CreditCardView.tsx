@@ -13,6 +13,7 @@ import {
   Receipt,
 } from "lucide-react";
 import KpiCard from "@/components/dashboard/KpiCard";
+import { monthlyPayment } from "@/lib/credit";
 import InstallmentModal from "@/components/modals/InstallmentModal";
 import BillPaymentModal from "@/components/modals/BillPaymentModal";
 import AddCreditCardModal from "@/components/modals/AddCreditCardModal";
@@ -263,7 +264,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
             {/* Table Body */}
             <div className="divide-y text-sm" style={{ borderColor: "var(--border-subtle)" }}>
               {vigentes.map((inst) => {
-                const monthly = inst.totalAmount / inst.totalMonths;
+                const monthly = monthlyPayment(inst);
                 const pct = (inst.paidMonths / inst.totalMonths) * 100;
                 const remaining = inst.totalMonths - inst.paidMonths;
 

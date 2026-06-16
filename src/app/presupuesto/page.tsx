@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { monthlyPayment } from "@/lib/credit";
 import BudgetDashboard from "@/components/views/BudgetDashboard";
 
 export const dynamic = "force-dynamic";
@@ -40,18 +41,11 @@ export default async function PresupuestoPage() {
   for (const row of expenseRows) {
     let spent = 0;
     if (row.debtReferenceId && row.status === 'VIGENTE') {
-      const interest = row.monthlyInterest || 0;
-      if (interest > 0) {
-        const r = interest / 100;
-        const n = row.totalMonths;
-        spent = (row.totalAmount * r) / (1 - Math.pow(1 + r, -n));
-      } else {
-        spent = row.totalAmount / row.totalMonths;
-      }
+      spent = monthlyPayment(row); // devengo de la cuota del mes
     } else if (!row.debtReferenceId) {
       spent = row.amount;
     }
-    
+
     spentMap.set(row.category, (spentMap.get(row.category) || 0) + spent);
   }
 

@@ -18,10 +18,11 @@ import { useRouter } from "next/navigation";
 import AddAccountModal from "@/components/modals/AddAccountModal";
 import EditAccountModal from "@/components/modals/EditAccountModal";
 import { Settings } from "lucide-react";
+import { formatCents } from "@/lib/money";
 
-// ── Helpers ───────────────────────────────────────────────────
+// ── Helpers (los montos llegan en centavos enteros) ───────────
 function formatCOP(v: number) {
-  return "$" + v.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatCents(v);
 }
 function formatCOPShort(v: number) {
   return formatCOP(v);

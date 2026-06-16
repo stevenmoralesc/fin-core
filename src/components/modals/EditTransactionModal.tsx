@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Transaction, CategoriesByType } from "@/lib/types";
+import { fromCents } from "@/lib/money";
 
 interface EditTransactionModalProps {
   transaction: Pick<Transaction, "id" | "date" | "type" | "amount" | "category" | "description">;
@@ -26,7 +27,7 @@ export default function EditTransactionModal({
   const [form, setForm] = useState({
     type: transaction.type,
     category: transaction.category,
-    amount: String(transaction.amount),
+    amount: String(fromCents(transaction.amount)),
     description: transaction.description ?? "",
     date: transaction.date.split("T")[0],
   });

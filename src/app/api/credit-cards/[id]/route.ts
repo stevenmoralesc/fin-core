@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { toCents } from "@/lib/money";
 import type { NextRequest } from "next/server";
 
 export async function PATCH(
@@ -44,7 +45,7 @@ export async function PATCH(
       id,
       name: name.trim(),
       bank: bank.trim(),
-      totalLimit: limitNum,
+      totalLimit: toCents(limitNum),
       closingDay: closing,
       paymentDay: payment,
       now: new Date().toISOString(),

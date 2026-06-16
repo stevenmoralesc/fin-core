@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, RefreshCw, Wallet, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Account, CreditCard } from "@/lib/types";
+import { formatCents } from "@/lib/money";
 
 interface BillPaymentModalProps {
   card: CreditCard;
@@ -16,8 +17,9 @@ interface AccountWithBalance extends Account {
   currentBalance: number;
 }
 
+// Los montos llegan en centavos enteros.
 function formatCOP(value: number): string {
-  return "$" + Number(value).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatCents(value);
 }
 
 function accountIcon(type: string) {

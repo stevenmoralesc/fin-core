@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { toCents } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
       id,
       name: name.trim(),
       bank: bank.trim(),
-      totalLimit: limitNum,
+      totalLimit: toCents(limitNum),
       closingDay: closing,
       paymentDay: payment,
       now,

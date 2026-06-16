@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { BudgetStats } from "@/app/presupuesto/page";
+import { fromCents } from "@/lib/money";
 
 interface BudgetModalProps {
   onClose: () => void;
@@ -33,7 +34,7 @@ export default function BudgetModal({ onClose, stats, initialCategory, initialBu
     transactionType: "GASTO" as "INGRESO" | "GASTO" | "TRANSFERENCIA",
     category: initialCategory || "",
     newCategory: "",
-    suggestedBudget: initialBudget ? String(initialBudget) : "",
+    suggestedBudget: initialBudget ? String(fromCents(initialBudget)) : "",
     icon: initialIcon || "📌",
   });
 

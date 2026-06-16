@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, RefreshCw, Trash2, Settings } from "lucide-react";
 import type { AccountWithStats } from "@/app/cuentas/page";
+import { fromCents } from "@/lib/money";
 
 interface EditAccountModalProps {
   account: AccountWithStats;
@@ -16,7 +17,7 @@ export default function EditAccountModal({ account, onClose }: EditAccountModalP
   const [form, setForm] = useState({
     name: account.name,
     type: account.type as "EFECTIVO" | "AHORROS" | "CORRIENTE",
-    initialBalance: account.initialBalance.toString(),
+    initialBalance: fromCents(account.initialBalance).toString(),
   });
 
   const handleUpdate = async (e: React.FormEvent) => {

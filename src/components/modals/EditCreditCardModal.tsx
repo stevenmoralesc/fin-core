@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { CreditCard } from "@/lib/types";
+import { fromCents } from "@/lib/money";
 
 interface EditCreditCardModalProps {
   card: CreditCard;
@@ -19,7 +20,7 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
   const [form, setForm] = useState({
     name: card.name,
     bank: card.bank,
-    totalLimit: String(card.totalLimit),
+    totalLimit: String(fromCents(card.totalLimit)),
     closingDay: String(card.closingDay),
     paymentDay: String(card.paymentDay),
   });

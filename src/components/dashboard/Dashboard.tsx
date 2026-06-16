@@ -5,18 +5,16 @@ import Link from "next/link";
 import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, MoreHorizontal, ChevronDown, ChevronRight } from "lucide-react";
 import EditTransactionModal from "@/components/modals/EditTransactionModal";
 import TransactionModal from "@/components/modals/TransactionModal";
+import { formatCents } from "@/lib/money";
 import type { DashboardSummary, CategoriesByType, Transaction, Account } from "@/lib/types";
 
-// ── Helpers ───────────────────────────────────────────────────
+// ── Helpers (los montos llegan en centavos enteros) ───────────
 function formatCOP(value: number, showSign = true): string {
-  const abs = Math.abs(value);
-  const formatted = abs.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (!showSign) return `$${formatted}`;
-  return value < 0 ? `−$${formatted}` : `+$${formatted}`;
+  return formatCents(value, showSign);
 }
 
 function formatCOPShort(value: number): string {
-  return `$${value.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return formatCents(value);
 }
 
 function relativeDate(isoDate: string): string {

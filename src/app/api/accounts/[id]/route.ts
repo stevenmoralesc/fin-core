@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { toCents } from "@/lib/money";
 import type { NextRequest } from "next/server";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -21,7 +22,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       UPDATE dim_cuentas
       SET name = @name, type = @type, initialBalance = @initialBalance, updatedAt = @now
       WHERE id = @id
-    `).run({ id, name: name.trim(), type, initialBalance: balanceNum, now });
+    `).run({ id, name: name.trim(), type, initialBalance: toCents(balanceNum), now });
 
     return Response.json({ success: true });
   } catch (error) {

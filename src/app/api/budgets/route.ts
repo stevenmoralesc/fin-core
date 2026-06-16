@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { toCents } from "@/lib/money";
 import type { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     `).run({
       category: category.trim(),
       icon: icon ? icon.trim() : null,
-      suggestedBudget: Number(suggestedBudget),
+      suggestedBudget: toCents(Number(suggestedBudget)),
       transactionType,
       createdAt: new Date().toISOString(),
     });

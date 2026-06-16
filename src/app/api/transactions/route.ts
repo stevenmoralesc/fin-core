@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { toCents } from "@/lib/money";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
           id: debtReferenceId,
           purchaseDate: txDate,
           establishment: description || "Compra con TC",
-          totalAmount: amountNum,
+          totalAmount: toCents(amountNum),
           totalMonths: numInstallments,
           paidMonths: 0,
           monthlyInterest: 0,
@@ -141,7 +142,7 @@ export async function POST(request: NextRequest) {
         date: txDate,
         type,
         category,
-        amount: amountNum,
+        amount: toCents(amountNum),
         description: description ?? null,
         accountId,
         destinationAccountId,

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { toCents } from "@/lib/money";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     db.prepare(`
       INSERT INTO dim_cuentas (id, name, type, initialBalance, currency, status, createdAt, updatedAt)
       VALUES (@id, @name, @type, @initialBalance, @currency, 'ACTIVA', @now, @now)
-    `).run({ id, name: name.trim(), type, initialBalance: Number(initialBalance), currency, now });
+    `).run({ id, name: name.trim(), type, initialBalance: toCents(Number(initialBalance)), currency, now });
 
     return Response.json({ id }, { status: 201 });
   } catch (error) {

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { toCents } from "@/lib/money";
 import type { NextRequest } from "next/server";
 
 // PATCH /api/transactions/:id — editar una transacción
@@ -48,7 +49,7 @@ export async function PATCH(
         id,
         type,
         category: category.trim(),
-        amount: amountNum,
+        amount: toCents(amountNum),
         description: description ?? null,
         date: txDate,
         now,
@@ -60,7 +61,7 @@ export async function PATCH(
           SET totalAmount = @amount, establishment = @description, updatedAt = @now
           WHERE id = @debtId
         `).run({
-          amount: amountNum,
+          amount: toCents(amountNum),
           description: description ?? null,
           now,
           debtId: existing.debtReferenceId,

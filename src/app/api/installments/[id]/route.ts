@@ -56,8 +56,9 @@ export async function PATCH(
     const d = new Date();
     const today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
 
-    // Valor de la cuota mensual (amortización francesa si hay interés).
-    const monthly = monthlyPayment(purchase);
+    // Valor de la cuota mensual (amortización francesa si hay interés),
+    // redondeado a centavos enteros.
+    const monthly = Math.round(monthlyPayment(purchase));
 
     // Atómico: subir la cuota pagada + registrar el gasto contra la cuenta.
     // El gasto lleva debtReferenceId para excluirse del KPI de "gastos del periodo"

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import KpiCard from "@/components/dashboard/KpiCard";
 import { monthlyPayment } from "@/lib/credit";
+import { formatCents } from "@/lib/money";
 import InstallmentModal from "@/components/modals/InstallmentModal";
 import BillPaymentModal from "@/components/modals/BillPaymentModal";
 import AddCreditCardModal from "@/components/modals/AddCreditCardModal";
@@ -23,8 +24,9 @@ import { useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
 
 // ── Helpers ───────────────────────────────────────────────────
+// Los montos llegan en centavos enteros.
 function formatCOP(value: number): string {
-  return "$" + Number(value).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatCents(value);
 }
 function formatCOPShort(value: number): string {
   return formatCOP(value);

@@ -5,23 +5,20 @@ import { PieChart, Plus, Target, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { BudgetStats } from "@/app/presupuesto/page";
 import BudgetModal from "@/components/modals/BudgetModal";
+import { formatCents, formatCentsShort } from "@/lib/money";
 
 interface BudgetDashboardProps {
   initialStats: BudgetStats[];
 }
 
+// Los montos llegan en centavos enteros.
 function formatCOP(value: number): string {
-  return `$${value.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return formatCents(value);
 }
 
-/** Monto abreviado: 368000 → "368k", 1226450 → "1,2M" */
+/** Monto abreviado en unidades: 36800000¢ → "368k", 122645000¢ → "1,2M" */
 function formatK(value: number): string {
-  if (value >= 1_000_000) {
-    const m = value / 1_000_000;
-    return `${(Math.round(m * 10) / 10).toString().replace(".", ",")}M`;
-  }
-  if (value >= 1_000) return `${Math.round(value / 1_000)}k`;
-  return `${Math.round(value)}`;
+  return formatCentsShort(value);
 }
 
 /** Paleta pastel cíclica: relleno (claro) + borde punteado (mismo tono, más saturado) */

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight, MoreHorizontal, Search, Receipt } from "lucide-react";
 import EditTransactionModal from "@/components/modals/EditTransactionModal";
 import type { Transaction, CategoriesByType } from "@/lib/types";
+import { formatCents } from "@/lib/money";
 
 interface TransactionsViewProps {
   transactions: Transaction[];
@@ -13,8 +14,9 @@ interface TransactionsViewProps {
 
 type Filter = "TODOS" | "GASTO" | "INGRESO" | "TRANSFERENCIA";
 
+// Los montos llegan en centavos enteros.
 function formatCOP(value: number): string {
-  return `$${Math.abs(value).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return formatCents(value);
 }
 
 function dateKey(iso: string): string {

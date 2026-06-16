@@ -84,7 +84,7 @@ export async function POST(
       for (const inst of vigentes) {
         const newPaidMonths = inst.paidMonths + 1;
         const newStatus = newPaidMonths >= inst.totalMonths ? "AMORTIZADA" : "VIGENTE";
-        const monthly = monthlyPayment(inst);
+        const monthly = Math.round(monthlyPayment(inst));
 
         updateStmt.run({ paidMonths: newPaidMonths, status: newStatus, now, id: inst.id });
         insertStmt.run({

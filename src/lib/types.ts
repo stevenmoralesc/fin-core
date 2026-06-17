@@ -84,6 +84,7 @@ export interface DashboardSummary {
   cupoUtilizadoPct: number;
   gastosCorrientesMes: number;
   recentTransactions: Transaction[];
+  periodTransactionsCount: number;
   cuentasActivas: Account[];
   budgetByCategory: BudgetByCategory[];
 }

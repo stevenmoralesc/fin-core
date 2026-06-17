@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
     
     const creditCardUsedPercent = creditCardLimit > 0 ? (creditCardUsed / creditCardLimit) * 100 : 0;
 
-    // 4. Transacciones recientes del periodo
+    // 4. Transacciones recientes del periodo (últimas 5) + total del periodo
     const txs = db.prepare(`
       SELECT t.id, t.type, t.date, t.amount, t.category, t.description, t.accountId, t.debtReferenceId,
              COALESCE(c.name, tc.name) AS paymentMethodName
@@ -134,8 +134,13 @@ export async function GET(req: NextRequest) {
       LEFT JOIN fact_compras_cuotas fcc ON t.debtReferenceId = fcc.id
       LEFT JOIN dim_tarjetas_credito tc ON fcc.creditCardId = tc.id
       WHERE t.date >= ? AND t.date <= ?
-      ORDER BY t.date DESC LIMIT 7
+      ORDER BY t.date DESC, t.createdAt DESC LIMIT 5
     `).all(startDate, endDate) as DashboardSummary["recentTransactions"];
+
+    const periodTransactionsCount = (db.prepare(`
+      SELECT COUNT(*) AS n FROM fact_transacciones
+      WHERE date >= ? AND date <= ?
+    `).get(startDate, endDate) as { n: number }).n;
 
     // 5. Cuentas activas con saldo proyectado
     const cuentasActivas = db.prepare(`
@@ -174,6 +179,7 @@ export async function GET(req: NextRequest) {
       cupoUtilizadoPct: creditCardUsedPercent,
       gastosCorrientesMes: expenses,
       recentTransactions: txs,
+      periodTransactionsCount,
       cuentasActivas: cuentasActivas,
       budgetByCategory,
     };

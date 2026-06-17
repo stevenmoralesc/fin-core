@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, MoreHorizontal, ChevronDown, ChevronRight } from "lucide-react";
+import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, MoreHorizontal, ChevronDown, ChevronRight } from "lucide-react";
 import EditTransactionModal from "@/components/modals/EditTransactionModal";
 import TransactionModal from "@/components/modals/TransactionModal";
 import BudgetBars from "@/components/budget/BudgetBars";
@@ -301,8 +301,8 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
           <div>
             <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Transacciones recientes</h2>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              {data.recentTransactions?.length > 0
-                ? `${data.recentTransactions.length} movimientos en el periodo`
+              {data.periodTransactionsCount > 0
+                ? `Últimas ${data.recentTransactions.length} de ${data.periodTransactionsCount} movimientos del periodo`
                 : "Sin movimientos en este periodo"}
             </p>
           </div>
@@ -336,12 +336,19 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
               >
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: tx.type === "INGRESO" ? "var(--success-bg)" : "var(--bg-surface-2)" }}
+                  style={{
+                    background:
+                      tx.type === "INGRESO" ? "var(--success-bg)"
+                      : tx.type === "GASTO" ? "var(--danger-bg)"
+                      : "var(--bg-surface-2)",
+                  }}
                 >
                   {tx.type === "INGRESO" ? (
-                    <ArrowDownLeft size={15} strokeWidth={2.5} style={{ color: "var(--success)" }} />
+                    <ArrowUpRight size={15} strokeWidth={2.5} style={{ color: "var(--success)" }} />
+                  ) : tx.type === "TRANSFERENCIA" ? (
+                    <ArrowLeftRight size={15} strokeWidth={2.5} style={{ color: "var(--text-secondary)" }} />
                   ) : (
-                    <ArrowUpRight size={15} strokeWidth={2.5} style={{ color: "var(--text-secondary)" }} />
+                    <ArrowDownLeft size={15} strokeWidth={2.5} style={{ color: "var(--danger)" }} />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -355,9 +362,14 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
                 </div>
                 <span
                   className="text-sm font-bold tabular-nums shrink-0"
-                  style={{ color: tx.type === "INGRESO" ? "var(--success)" : "var(--text-primary)" }}
+                  style={{
+                    color:
+                      tx.type === "INGRESO" ? "var(--success)"
+                      : tx.type === "GASTO" ? "var(--danger)"
+                      : "var(--text-secondary)",
+                  }}
                 >
-                  {formatCOP(tx.type === "INGRESO" ? tx.amount : -tx.amount)}
+                  {tx.type === "INGRESO" ? "+" : tx.type === "TRANSFERENCIA" ? "" : "−"}{formatCOP(tx.amount, false)}
                 </span>
                 <button
                   onClick={() => setEditingTx(tx as Transaction)}

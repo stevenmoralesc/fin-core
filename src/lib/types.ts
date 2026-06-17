@@ -83,6 +83,8 @@ export interface DashboardSummary {
   limiteTC: number;
   cupoUtilizadoPct: number;
   gastosCorrientesMes: number;
+  ingresosDelPeriodo: number;
+  pagoTcPendiente: number;
   recentTransactions: Transaction[];
   periodTransactionsCount: number;
   cuentasActivas: Account[];

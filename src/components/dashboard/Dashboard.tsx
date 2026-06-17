@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, MoreHorizontal, ChevronDown, ChevronRight } from "lucide-react";
+import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, MoreHorizontal, ChevronDown, ChevronRight, TrendingUp, TrendingDown, CreditCard } from "lucide-react";
 import EditTransactionModal from "@/components/modals/EditTransactionModal";
 import TransactionModal from "@/components/modals/TransactionModal";
 import BudgetBars from "@/components/budget/BudgetBars";
@@ -123,32 +123,59 @@ function MonthPickerPopover({
   );
 }
 
-// ── KPI Card inline ───────────────────────────────────────────
-function KpiBlock({
+// ── Summary card (ingresos / gastos) ──────────────────────────
+function SummaryCard({
+  tone,
+  icon: Icon,
   label,
   value,
-  trend,
-  trendPositive,
-  sub,
+  pillLabel,
+  pillValue,
+  pillIcon: PillIcon,
+  pillEmpty,
 }: {
+  tone: "income" | "expense";
+  icon: typeof Wallet;
   label: string;
   value: string;
-  trend: string;
-  trendPositive: boolean;
-  sub?: string;
+  pillLabel: string;
+  pillValue: string;
+  pillIcon: typeof TrendingUp;
+  pillEmpty?: boolean;
 }) {
+  const color = tone === "income" ? "var(--success)" : "var(--danger)";
+  const softBg = tone === "income" ? "var(--success-bg)" : "var(--danger-bg)";
   return (
     <div
-      className="p-6 rounded-2xl border flex flex-col justify-between min-h-[140px]"
-      style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}
+      className="p-5 sm:p-6 rounded-3xl border-2 flex items-center gap-5"
+      style={{
+        background: "var(--bg-surface)",
+        borderColor: color,
+        boxShadow: "var(--shadow-sm)",
+      }}
     >
-      <span className="text-xs font-semibold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>{label}</span>
-      <span className="text-3xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>{value}</span>
-      <div>
-        <span className="text-xs font-medium" style={{ color: trendPositive ? "var(--success)" : "var(--danger)" }}>
-          {trend}
-        </span>
-        {sub && <span className="text-xs ml-1" style={{ color: "var(--text-muted)" }}>{sub}</span>}
+      <div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+        style={{ background: softBg }}
+      >
+        <Icon size={26} strokeWidth={2.2} style={{ color }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+          {label}
+        </p>
+        <p className="text-2xl sm:text-3xl font-bold tracking-tight tabular-nums mt-0.5 truncate" style={{ color: "var(--text-primary)" }}>
+          {value}
+        </p>
+        {pillEmpty ? (
+          <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{pillLabel}</p>
+        ) : (
+          <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full" style={{ background: softBg }}>
+            <PillIcon size={12} strokeWidth={2.5} style={{ color }} />
+            <span className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>{pillLabel}</span>
+            <span className="text-xs font-bold tabular-nums" style={{ color }}>{pillValue}</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -197,8 +224,8 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
         </div>
         <div className="flex flex-col gap-8 px-6 md:px-10 py-8">
           <div className="h-9 w-48 bg-gray-200 rounded-lg" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => <div key={i} className="h-36 bg-gray-200 rounded-2xl" />)}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {[1, 2].map((i) => <div key={i} className="h-32 bg-gray-200 rounded-3xl" />)}
           </div>
           <div className="h-64 bg-gray-200 rounded-2xl" />
         </div>
@@ -249,28 +276,27 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
         </button>
       </div>
 
-      {/* ── BLOQUE 3: KPI GRID ────────────────────────────────── */}
-      <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 w-full transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>
-        <KpiBlock
-          label="Liquidez Total"
+      {/* ── BLOQUE 3: RESUMEN (INGRESOS / GASTOS) ─────────────── */}
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 w-full transition-opacity duration-300 ${loading ? "opacity-60" : "opacity-100"}`}>
+        <SummaryCard
+          tone="income"
+          icon={Wallet}
+          label="Saldo disponible"
           value={formatCOPShort(data.liquidezTotal)}
-          trend={`Efectivo + Cuentas`}
-          trendPositive={true}
-          sub=""
+          pillLabel="Ingresos del periodo"
+          pillValue={formatCOPShort(data.ingresosDelPeriodo ?? 0)}
+          pillIcon={TrendingUp}
+          pillEmpty={!data.ingresosDelPeriodo}
         />
-        <KpiBlock
-          label="Cupo Utilizado TC"
-          value={formatCOPShort(data.cupoUtilizadoTC)}
-          trend={`${data.cupoUtilizadoPct.toFixed(1)}% de cupo total`}
-          trendPositive={false}
-          sub={`Disponible: ${formatCOPShort(data.limiteTC - data.cupoUtilizadoTC)}`}
-        />
-        <KpiBlock
-          label="Gastos del Periodo"
+        <SummaryCard
+          tone="expense"
+          icon={TrendingDown}
+          label="Gastos del periodo"
           value={formatCOPShort(data.gastosCorrientesMes)}
-          trend={`Gastos registrados`}
-          trendPositive={false}
-          sub=""
+          pillLabel="Pago TC pendiente"
+          pillValue={formatCOPShort(data.pagoTcPendiente ?? 0)}
+          pillIcon={CreditCard}
+          pillEmpty={!data.pagoTcPendiente}
         />
       </div>
 

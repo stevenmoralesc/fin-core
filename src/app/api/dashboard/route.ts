@@ -85,21 +85,31 @@ export async function GET(req: NextRequest) {
       spentByCategory.set(row.category, (spentByCategory.get(row.category) || 0) + rowSpent);
     }
 
+    // 2b. Ingresos del periodo (solo INGRESO, sin contar transferencias).
+    const incomeRow = db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) AS total
+      FROM fact_transacciones
+      WHERE type = 'INGRESO' AND date >= ? AND date <= ?
+    `).get(startDate, endDate) as { total: number };
+    const incomeTotal = incomeRow.total;
+
     // 3. Cupo Utilizado TC (using CreditCardStatement if exists, else fallback)
+    // y Pago TC pendiente del mes = suma de cuotas mensuales vigentes.
     const cards = db.prepare(`SELECT id, totalLimit FROM dim_tarjetas_credito`).all() as { id: string, totalLimit: number }[];
     let creditCardUsed = 0;
     let creditCardLimit = 0;
-    
+    let creditCardBillDue = 0;
+
     for (const card of cards) {
       creditCardLimit += card.totalLimit;
-      
+
       const statement = db.prepare(`
-        SELECT id FROM fact_estados_cuenta 
-        WHERE creditCardId = ? 
+        SELECT id FROM fact_estados_cuenta
+        WHERE creditCardId = ?
           AND ((startDate <= ? AND closingDate >= ?) OR (startDate >= ? AND startDate <= ?))
         ORDER BY closingDate DESC LIMIT 1
       `).get(card.id, endDate, startDate, startDate, endDate) as { id: string } | undefined;
-      
+
       let installmentsToSum: InstallmentRow[] = [];
 
       if (statement) {
@@ -120,9 +130,13 @@ export async function GET(req: NextRequest) {
       for (const inst of installmentsToSum) {
         // Cupo ocupado = capital pendiente (el interés no consume cupo).
         creditCardUsed += outstandingPrincipal(inst);
+        // Pago del mes = cuota mensual de cada compra vigente.
+        if (inst.totalMonths > inst.paidMonths) {
+          creditCardBillDue += monthlyPayment(inst);
+        }
       }
     }
-    
+
     const creditCardUsedPercent = creditCardLimit > 0 ? (creditCardUsed / creditCardLimit) * 100 : 0;
 
     // 4. Transacciones recientes del periodo (últimas 5) + total del periodo
@@ -178,6 +192,8 @@ export async function GET(req: NextRequest) {
       limiteTC: creditCardLimit,
       cupoUtilizadoPct: creditCardUsedPercent,
       gastosCorrientesMes: expenses,
+      ingresosDelPeriodo: incomeTotal,
+      pagoTcPendiente: creditCardBillDue,
       recentTransactions: txs,
       periodTransactionsCount,
       cuentasActivas: cuentasActivas,

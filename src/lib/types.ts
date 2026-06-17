@@ -70,6 +70,13 @@ export type CategoriesByType = Record<
   Record<string, { suggestedBudget: number; icon?: string | null }[]>
 >;
 
+export interface BudgetByCategory {
+  category: string;
+  icon?: string | null;
+  budget: number; // tope en centavos
+  spent: number;  // gastado en centavos
+}
+
 export interface DashboardSummary {
   liquidezTotal: number;
   cupoUtilizadoTC: number;
@@ -78,6 +85,7 @@ export interface DashboardSummary {
   gastosCorrientesMes: number;
   recentTransactions: Transaction[];
   cuentasActivas: Account[];
+  budgetByCategory: BudgetByCategory[];
 }
 
 export interface TransactionCreate {

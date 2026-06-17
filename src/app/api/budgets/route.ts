@@ -36,12 +36,17 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
+    const transactionType = searchParams.get("transactionType");
 
     if (!category) {
       return Response.json({ error: "Falta la categoría" }, { status: 400 });
     }
 
-    db.prepare(`DELETE FROM sys_config WHERE category = ?`).run(category);
+    if (transactionType) {
+      db.prepare(`DELETE FROM sys_config WHERE category = ? AND transactionType = ?`).run(category, transactionType);
+    } else {
+      db.prepare(`DELETE FROM sys_config WHERE category = ?`).run(category);
+    }
 
     return Response.json({ success: true }, { status: 200 });
   } catch (error) {

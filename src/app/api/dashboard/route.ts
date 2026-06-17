@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
 
     // 2. Gastos Corrientes (strictly within the period + active installments)
     const expenseRows = db.prepare(`
-      SELECT t.amount, t.debtReferenceId, c.totalAmount, c.totalMonths, c.monthlyInterest, c.status
+      SELECT t.category, t.amount, t.debtReferenceId, c.totalAmount, c.totalMonths, c.monthlyInterest, c.status
       FROM fact_transacciones t
       LEFT JOIN fact_compras_cuotas c ON t.debtReferenceId = c.id
       WHERE t.type = 'GASTO'
@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
           (t.debtReferenceId IS NOT NULL AND t.accountId IS NULL AND c.status = 'VIGENTE' AND t.date <= ?)
         )
     `).all(startDate, endDate, endDate) as {
+      category: string;
       amount: number;
       debtReferenceId: string | null;
       totalAmount: number;
@@ -71,13 +72,17 @@ export async function GET(req: NextRequest) {
     }[];
 
     let expenses = 0;
+    const spentByCategory = new Map<string, number>();
     for (const row of expenseRows) {
+      let rowSpent = 0;
       if (row.debtReferenceId && row.status === 'VIGENTE') {
         // Devengo: la cuota del mes de la compra diferida.
-        expenses += monthlyPayment(row);
+        rowSpent = monthlyPayment(row);
       } else if (!row.debtReferenceId) {
-        expenses += row.amount;
+        rowSpent = row.amount;
       }
+      expenses += rowSpent;
+      spentByCategory.set(row.category, (spentByCategory.get(row.category) || 0) + rowSpent);
     }
 
     // 3. Cupo Utilizado TC (using CreditCardStatement if exists, else fallback)
@@ -148,6 +153,20 @@ export async function GET(req: NextRequest) {
       FROM dim_cuentas c WHERE status = 'ACTIVA' ORDER BY type, name
     `).all(endDate, endDate) as DashboardSummary["cuentasActivas"];
 
+    // 6. Presupuesto por categoría (solo GASTO con tope > 0)
+    const budgetRows = db.prepare(`
+      SELECT category, icon, suggestedBudget
+      FROM sys_config
+      WHERE transactionType = 'GASTO' AND suggestedBudget > 0
+      ORDER BY suggestedBudget DESC
+    `).all() as { category: string; icon: string | null; suggestedBudget: number }[];
+    const budgetByCategory = budgetRows.map((b) => ({
+      category: b.category,
+      icon: b.icon,
+      budget: b.suggestedBudget,
+      spent: Math.round(spentByCategory.get(b.category) || 0),
+    }));
+
     const summary: DashboardSummary = {
       liquidezTotal: totalLiquidity,
       cupoUtilizadoTC: creditCardUsed,
@@ -156,6 +175,7 @@ export async function GET(req: NextRequest) {
       gastosCorrientesMes: expenses,
       recentTransactions: txs,
       cuentasActivas: cuentasActivas,
+      budgetByCategory,
     };
 
     return NextResponse.json(summary);

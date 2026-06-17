@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, MoreHorizontal, ChevronDown, ChevronRight } from "lucide-react";
 import EditTransactionModal from "@/components/modals/EditTransactionModal";
 import TransactionModal from "@/components/modals/TransactionModal";
+import BudgetBars from "@/components/budget/BudgetBars";
 import { formatCents } from "@/lib/money";
 import { relativeDate } from "@/lib/format";
 import type { DashboardSummary, CategoriesByType, Transaction, Account } from "@/lib/types";
@@ -271,6 +272,27 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
           trendPositive={false}
           sub=""
         />
+      </div>
+
+      {/* ── BLOQUE 3.5: PRESUPUESTO POR CATEGORÍA ─────────────── */}
+      <div className="rounded-2xl w-full overflow-hidden border" style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
+        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+          <div>
+            <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Presupuesto por categoría</h2>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Gasto del periodo frente al tope de cada categoría</p>
+          </div>
+          <Link
+            href="/presupuesto"
+            className="flex items-center gap-1 text-xs font-semibold shrink-0"
+            style={{ color: "var(--info)" }}
+          >
+            Categorías
+            <ChevronRight size={14} />
+          </Link>
+        </div>
+        <div className="px-6 py-5">
+          <BudgetBars items={data.budgetByCategory ?? []} />
+        </div>
       </div>
 
       {/* ── BLOQUE 4: TRANSACCIONES RECIENTES ─────────────────── */}

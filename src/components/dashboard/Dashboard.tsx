@@ -6,6 +6,7 @@ import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, MoreHorizontal, Chev
 import EditTransactionModal from "@/components/modals/EditTransactionModal";
 import TransactionModal from "@/components/modals/TransactionModal";
 import { formatCents } from "@/lib/money";
+import { relativeDate } from "@/lib/format";
 import type { DashboardSummary, CategoriesByType, Transaction, Account } from "@/lib/types";
 
 // ── Helpers (los montos llegan en centavos enteros) ───────────
@@ -15,20 +16,6 @@ function formatCOP(value: number, showSign = true): string {
 
 function formatCOPShort(value: number): string {
   return formatCents(value);
-}
-
-function relativeDate(isoDate: string): string {
-  const dateStr = isoDate.length === 10 ? isoDate + 'T12:00:00' : isoDate;
-  const date = new Date(dateStr);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  
-  const diff = Math.floor((today.getTime() - target.getTime()) / 86_400_000);
-  
-  if (diff === 0) return "Hoy";
-  if (diff === 1) return "Ayer";
-  return date.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
 }
 
 // ── Month picker popover ──────────────────────────────────────

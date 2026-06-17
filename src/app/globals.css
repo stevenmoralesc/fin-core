@@ -34,6 +34,8 @@
   --warning-bg:       #fffbeb;
   --danger:           #ef4444;
   --danger-bg:        #fef2f2;
+  --info:             #3b82f6;
+  --info-bg:          #eff6ff;
 
   /* Sidebar */
   --sidebar-bg:       #ffffff;
@@ -84,6 +86,8 @@
   --warning-bg:       #78350f44;
   --danger:           #f87171;
   --danger-bg:        #7f1d1d44;
+  --info:             #60a5fa;
+  --info-bg:          #1e3a8a44;
 
   /* Sidebar */
   --sidebar-bg:       #13151f;
@@ -127,6 +131,23 @@
 .text-muted     { color: var(--text-muted); }
 .border-base    { border-color: var(--border); }
 .border-subtle  { border-color: var(--border-subtle); }
+.text-placeholder { color: var(--text-placeholder); }
+
+/* Semantic color utilities (theme-aware, reemplazan bg-emerald-50 etc.) */
+.text-success { color: var(--success); }
+.text-danger  { color: var(--danger); }
+.text-warning { color: var(--warning); }
+.text-info    { color: var(--info); }
+.text-accent  { color: var(--accent); }
+.bg-success-soft { background-color: var(--success-bg); }
+.bg-danger-soft  { background-color: var(--danger-bg); }
+.bg-warning-soft { background-color: var(--warning-bg); }
+.bg-info-soft    { background-color: var(--info-bg); }
+
+/* Hover variants para fondos temáticos (reemplazan onMouseEnter/Leave) */
+.hover\:bg-surface:hover    { background-color: var(--bg-surface); }
+.hover\:bg-surface-2:hover  { background-color: var(--bg-surface-2); }
+.hover\:bg-surface-3:hover  { background-color: var(--bg-surface-3); }
 
 /* ─────────────────────────────────────────────────────────────────
    Base resets

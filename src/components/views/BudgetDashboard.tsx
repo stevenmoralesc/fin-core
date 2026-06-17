@@ -72,8 +72,8 @@ export default function BudgetDashboard({ initialStats }: BudgetDashboardProps) 
           <div className="rounded-2xl border p-6 shadow-sm flex flex-col justify-between" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                  <Target size={20} className="text-indigo-600" />
+                <div className="w-10 h-10 rounded-xl bg-info-soft flex items-center justify-center">
+                  <Target size={20} className="text-info" />
                 </div>
                 <h3 className="text-sm font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Presupuesto Total</h3>
               </div>
@@ -84,8 +84,8 @@ export default function BudgetDashboard({ initialStats }: BudgetDashboardProps) 
           <div className="rounded-2xl border p-6 shadow-sm flex flex-col justify-between" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">
-                  <PieChart size={20} className="text-rose-600" />
+                <div className="w-10 h-10 rounded-xl bg-danger-soft flex items-center justify-center">
+                  <PieChart size={20} className="text-danger" />
                 </div>
                 <h3 className="text-sm font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Gasto Actual</h3>
               </div>

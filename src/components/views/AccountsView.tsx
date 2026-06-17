@@ -19,6 +19,7 @@ import AddAccountModal from "@/components/modals/AddAccountModal";
 import EditAccountModal from "@/components/modals/EditAccountModal";
 import { Settings } from "lucide-react";
 import { formatCents } from "@/lib/money";
+import { relativeDate } from "@/lib/format";
 
 // ── Helpers (los montos llegan en centavos enteros) ───────────
 function formatCOP(v: number) {
@@ -27,34 +28,20 @@ function formatCOP(v: number) {
 function formatCOPShort(v: number) {
   return formatCOP(v);
 }
-function relativeDate(iso: string) {
-  const dateStr = iso.length === 10 ? iso + 'T12:00:00' : iso;
-  const d = new Date(dateStr);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  
-  const diff = Math.floor((today.getTime() - target.getTime()) / 86_400_000);
-  
-  if (diff === 0) return "Hoy";
-  if (diff === 1) return "Ayer";
-  if (diff < 7) return `Hace ${diff} días`;
-  return d.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
-}
 
 function accountIcon(type: string) {
   switch (type) {
-    case "EFECTIVO": return <Banknote size={20} className="text-emerald-600" />;
-    case "AHORROS":  return <Building2 size={20} className="text-blue-600" />;
-    case "CORRIENTE": return <CreditCard size={20} className="text-indigo-600" />;
-    default: return <Wallet size={20} className="text-gray-600" />;
+    case "EFECTIVO": return <Banknote size={20} className="text-success" />;
+    case "AHORROS":  return <Building2 size={20} className="text-info" />;
+    case "CORRIENTE": return <CreditCard size={20} className="text-warning" />;
+    default: return <Wallet size={20} className="text-muted" />;
   }
 }
 function accountBg(type: string) {
   switch (type) {
-    case "EFECTIVO": return "bg-emerald-50";
-    case "AHORROS":  return "bg-blue-50";
-    case "CORRIENTE": return "bg-indigo-50";
+    case "EFECTIVO": return "bg-success-soft";
+    case "AHORROS":  return "bg-info-soft";
+    case "CORRIENTE": return "bg-warning-soft";
     default: return "bg-surface-2";
   }
 }
@@ -81,7 +68,7 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
             <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>Mis Cuentas</h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
               Liquidez total:{" "}
-              <span className={`font-bold ${totalLiquidez >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+              <span className={`font-bold ${totalLiquidez >= 0 ? "text-success" : "text-danger"}`}>
                 {formatCOPShort(totalLiquidez)}
               </span>
             </p>
@@ -177,12 +164,10 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
                   <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{selectedAccount.name}</h2>
                   <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{selectedAccount.type} · Moneda: {selectedAccount.currency}</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setEditModalOpen(true)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-colors border shadow-sm"
-                  style={{ background: "var(--bg-surface-2)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-surface-3)"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "var(--bg-surface-2)"}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-colors border shadow-sm bg-surface-2 hover:bg-surface-3"
+                  style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
                 >
                   <Settings size={16} style={{ color: "var(--text-muted)" }} />
                   Editar
@@ -196,25 +181,25 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
                     label: "Saldo Actual",
                     value: formatCOP(selectedAccount.currentBalance),
                     sub: "Balance disponible",
-                    color: selectedAccount.currentBalance >= 0 ? "text-emerald-600" : "text-red-600",
-                    bg: "bg-emerald-50",
-                    icon: <Wallet size={18} className={selectedAccount.currentBalance >= 0 ? "text-emerald-600" : "text-red-600"} />,
+                    color: selectedAccount.currentBalance >= 0 ? "text-success" : "text-danger",
+                    bg: "bg-success-soft",
+                    icon: <Wallet size={18} className={selectedAccount.currentBalance >= 0 ? "text-success" : "text-danger"} />,
                   },
                   {
                     label: "Total Ingresos",
                     value: formatCOP(selectedAccount.totalIngresos),
                     sub: "Acumulado histórico",
-                    color: "text-blue-600",
-                    bg: "bg-blue-50",
-                    icon: <TrendingUp size={18} className="text-blue-600" />,
+                    color: "text-info",
+                    bg: "bg-info-soft",
+                    icon: <TrendingUp size={18} className="text-info" />,
                   },
                   {
                     label: "Total Gastos",
                     value: formatCOP(selectedAccount.totalGastos),
                     sub: "Acumulado histórico",
-                    color: "text-rose-600",
-                    bg: "bg-rose-50",
-                    icon: <TrendingDown size={18} className="text-rose-600" />,
+                    color: "text-danger",
+                    bg: "bg-danger-soft",
+                    icon: <TrendingDown size={18} className="text-danger" />,
                   },
                 ].map((kpi) => (
                   <div key={kpi.label} className="rounded-2xl border p-4 shadow-sm" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
@@ -245,27 +230,25 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
                 {selectedAccount.recentTransactions.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-14 text-center">
                     <div className="w-12 h-12 rounded-2xl bg-surface-2 flex items-center justify-center mb-3">
-                      <Wallet size={20} className="text-gray-300" />
+                      <Wallet size={20} className="text-placeholder" />
                     </div>
                     <p className="text-sm font-medium text-muted">Sin transacciones en esta cuenta</p>
-                    <p className="text-xs text-gray-300 mt-1">Usa esta cuenta en una nueva transacción</p>
+                    <p className="text-xs text-placeholder mt-1">Usa esta cuenta en una nueva transacción</p>
                   </div>
                 ) : (
                   <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
                     {selectedAccount.recentTransactions.map((tx) => (
                       <div
                         key={tx.id}
-                        className="flex items-center gap-4 px-5 py-3.5 transition-colors"
-                        onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-surface-2)"}
-                        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                        className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-surface-2"
                       >
                         <div
                           className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                            tx.type === "INGRESO" ? "bg-emerald-50" : "bg-surface-3"
+                            tx.type === "INGRESO" ? "bg-success-soft" : "bg-surface-3"
                           }`}
                         >
                           {tx.type === "INGRESO" ? (
-                            <ArrowDownLeft size={15} className="text-emerald-600" strokeWidth={2.5} />
+                            <ArrowDownLeft size={15} className="text-success" strokeWidth={2.5} />
                           ) : (
                             <ArrowUpRight size={15} className="text-secondary" strokeWidth={2.5} />
                           )}
@@ -280,7 +263,7 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
                         </div>
                         <span
                           className={`text-sm font-bold tabular-nums shrink-0 ${
-                            tx.type === "INGRESO" ? "text-emerald-600" : "text-gray-700"
+                            tx.type === "INGRESO" ? "text-success" : "text-secondary"
                           }`}
                         >
                           {tx.type === "INGRESO" ? "+" : "−"}{formatCOP(tx.amount)}

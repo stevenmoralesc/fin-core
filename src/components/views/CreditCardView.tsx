@@ -307,7 +307,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
                         onClick={() => { setPayAccountId(accounts[0]?.id ?? ""); setPayInstallmentId(inst.id); }}
                         disabled={isPending}
                         title="Marcar cuota como pagada"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success-soft hover:bg-success-soft text-success rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
                       >
                         <CalendarCheck size={13} />
                         Pagar cuota

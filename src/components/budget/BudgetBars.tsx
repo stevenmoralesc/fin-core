@@ -67,70 +67,59 @@ export default function BudgetBars({ items }: { items: BudgetBarItem[] }) {
         const pct = (cat.spent / cat.budget) * 100;
         const over = pct > 100;
 
+        // Altura del contorno (tope) ∝ presupuesto → barras dicientes.
         const outlineH = Math.max(MIN_OUTLINE, Math.round((cat.budget / maxBudget) * TRACK_H));
-        // Relleno dentro del contorno (tope al 100%).
-        const fillPct = Math.min(pct, 100);
-        // Sobre-gasto: sobresale proporcional al exceso, con tope visual.
-        const overflowH = over
-          ? Math.min(Math.round(((pct - 100) / 100) * outlineH), OVERFLOW_MAX)
+        // Relleno CONTINUO: misma escala del tope; si se pasa, sobresale
+        // por encima del contorno en el mismo color (con tope visual).
+        const rawFillH = (pct / 100) * outlineH;
+        const fillH = cat.spent > 0
+          ? Math.max(Math.min(rawFillH, outlineH + OVERFLOW_MAX), 56)
           : 0;
 
         return (
           <div key={cat.category} className="group relative flex flex-col items-center shrink-0" style={{ width: 84 }}>
-            {/* Pista: contenedor alto, contenido anclado abajo para que el overflow suba */}
-            <div className="flex flex-col justify-end w-full" style={{ height: TRACK_H + OVERFLOW_MAX }}>
-              {/* Sobre-gasto (rojo) por encima del contorno */}
-              {over && (
+            {/* Pista: contenedor alto; relleno y contorno anclados abajo */}
+            <div
+              className="relative w-full transition-transform group-hover:-translate-y-0.5"
+              style={{ height: TRACK_H + OVERFLOW_MAX }}
+              title={`${cat.category} · ${formatCents(cat.spent)} de ${formatCents(cat.budget)}${over ? ` · excedido ${formatCents(cat.spent - cat.budget)}` : ""}`}
+            >
+              {/* Relleno continuo (gasto), crece desde abajo y puede pasar el tope */}
+              {cat.spent > 0 && (
                 <div
-                  className="w-full flex items-start justify-center"
+                  className="absolute bottom-0 transition-[height] duration-700 ease-out"
                   style={{
-                    height: overflowH,
-                    background: "var(--danger)",
-                    borderTopLeftRadius: 18,
-                    borderTopRightRadius: 18,
-                  }}
-                  title={`Excedido en ${formatCents(cat.spent - cat.budget)}`}
-                >
-                  <span className="text-[10px] font-extrabold text-white leading-none pt-1">
-                    +{Math.round(pct - 100)}%
-                  </span>
-                </div>
-              )}
-
-              {/* Contorno punteado = tope */}
-              <div
-                className="relative w-full transition-transform group-hover:-translate-y-0.5"
-                style={{
-                  height: outlineH,
-                  borderRadius: over ? "0 0 22px 22px" : 22,
-                  border: `2px dashed ${over ? "var(--danger)" : color.dash}`,
-                  padding: 4,
-                }}
-                title={`${cat.category} · ${formatCents(cat.spent)} de ${formatCents(cat.budget)}`}
-              >
-                {/* Relleno (gasto) creciendo desde abajo */}
-                <div
-                  className="absolute left-1 right-1 bottom-1 transition-[height] duration-700 ease-out"
-                  style={{
-                    height: `calc(${fillPct}% - 8px)`,
-                    minHeight: cat.spent > 0 ? 64 : 0,
+                    left: 6,
+                    right: 6,
+                    height: fillH,
                     background: color.fill,
                     borderRadius: 18,
                   }}
                 />
-                {/* Contenido anclado al fondo */}
-                <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-0.5 pb-2.5 z-10">
-                  <span className="text-lg leading-none mb-0.5">{cat.icon || "💸"}</span>
-                  <span className="text-sm font-extrabold leading-none" style={{ color: "#1f2937" }}>
-                    {formatCentsShort(cat.spent)}
-                  </span>
-                  <span
-                    className="text-[11px] font-bold leading-none"
-                    style={{ color: over ? "var(--danger)" : "rgba(31,41,55,0.55)" }}
-                  >
-                    {pct.toFixed(0)}%
-                  </span>
-                </div>
+              )}
+
+              {/* Contorno punteado = tope (transparente, encima: la línea queda visible aunque la barra la pase) */}
+              <div
+                className="absolute left-0 right-0 bottom-0 pointer-events-none"
+                style={{
+                  height: outlineH,
+                  borderRadius: 20,
+                  border: `2px dashed ${color.dash}`,
+                }}
+              />
+
+              {/* Contenido anclado al fondo, sobre el relleno */}
+              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-0.5 pb-2.5 z-10">
+                <span className="text-lg leading-none mb-0.5">{cat.icon || "💸"}</span>
+                <span className="text-sm font-extrabold leading-none" style={{ color: "#1f2937" }}>
+                  {formatCentsShort(cat.spent)}
+                </span>
+                <span
+                  className="text-[11px] font-bold leading-none"
+                  style={{ color: over ? "#1f2937" : "rgba(31,41,55,0.55)" }}
+                >
+                  {pct.toFixed(0)}%
+                </span>
               </div>
             </div>
 

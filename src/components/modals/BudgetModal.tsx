@@ -5,6 +5,7 @@ import { X, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { BudgetStats } from "@/app/presupuesto/page";
 import { fromCents } from "@/lib/money";
+import { useFeedback } from "@/components/ui/Feedback";
 
 interface BudgetModalProps {
   onClose: () => void;
@@ -24,6 +25,7 @@ const EMOJI_OPTIONS = [
 
 export default function BudgetModal({ onClose, stats, initialCategory, initialBudget, initialIcon }: BudgetModalProps) {
   const router = useRouter();
+  const { toast } = useFeedback();
   const [loading, setLoading] = useState(false);
 
   const existingCategories = Array.from(new Set(stats.map((s) => s.category)));
@@ -45,7 +47,7 @@ export default function BudgetModal({ onClose, stats, initialCategory, initialBu
     const finalCategory = categoryType === "NEW" ? form.newCategory : form.category;
 
     if (!finalCategory) {
-      alert("Debes seleccionar o ingresar una categoría.");
+      toast("error", "Debes seleccionar o ingresar una categoría.");
       setLoading(false);
       return;
     }
@@ -68,7 +70,7 @@ export default function BudgetModal({ onClose, stats, initialCategory, initialBu
       onClose();
     } catch (error) {
       console.error(error);
-      alert("No se pudo guardar el presupuesto.");
+      toast("error", "No se pudo guardar el presupuesto.");
     } finally {
       setLoading(false);
     }

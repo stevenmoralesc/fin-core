@@ -309,10 +309,8 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
             {data.recentTransactions.map((tx) => (
               <div
                 key={tx.id}
-                className="flex items-center gap-4 px-6 py-4 transition-colors group cursor-default"
+                className="flex items-center gap-4 px-6 py-4 transition-colors group cursor-default hover:bg-surface-2"
                 style={{ borderColor: "var(--border-subtle)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-2)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -341,10 +339,8 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
                 </span>
                 <button
                   onClick={() => setEditingTx(tx as Transaction)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 flex items-center justify-center rounded-lg shrink-0"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 flex items-center justify-center rounded-lg shrink-0 hover:bg-surface-3"
                   style={{ color: "var(--text-muted)" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-3)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   title="Editar transacción"
                 >
                   <MoreHorizontal size={14} />

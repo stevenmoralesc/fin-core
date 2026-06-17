@@ -157,10 +157,8 @@ export default function TransactionsView({ transactions, categories }: Transacti
                   return (
                     <div
                       key={tx.id}
-                      className="flex items-center gap-4 px-5 py-3.5 transition-colors group cursor-default"
+                      className="flex items-center gap-4 px-5 py-3.5 transition-colors group cursor-default hover:bg-surface-2"
                       style={{ borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-2)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
                       <div
                         className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -193,10 +191,8 @@ export default function TransactionsView({ transactions, categories }: Transacti
                       </span>
                       <button
                         onClick={() => setEditingTx(tx)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 flex items-center justify-center rounded-lg shrink-0"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 flex items-center justify-center rounded-lg shrink-0 hover:bg-surface-3"
                         style={{ color: "var(--text-muted)" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-3)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                         title="Editar transacción"
                       >
                         <MoreHorizontal size={14} />

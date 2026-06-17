@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, RefreshCw, CreditCard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { CreditCard as CreditCardType } from "@/lib/types";
+import { useFeedback } from "@/components/ui/Feedback";
 
 interface InstallmentModalProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ interface InstallmentModalProps {
 
 export default function InstallmentModal({ onClose, cards, preselectedCardId }: InstallmentModalProps) {
   const router = useRouter();
+  const { toast } = useFeedback();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     creditCardId: preselectedCardId ?? cards[0]?.id ?? "",
@@ -68,7 +70,7 @@ export default function InstallmentModal({ onClose, cards, preselectedCardId }: 
       onClose();
     } catch (error) {
       console.error(error);
-      alert("Error: " + (error as Error).message);
+      toast("error", (error as Error).message);
     } finally {
       setLoading(false);
     }

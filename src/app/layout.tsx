@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/layout/Sidebar";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { FeedbackProvider } from "@/components/ui/Feedback";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,15 +39,17 @@ export default function RootLayout({
         style={{ background: "var(--bg-base)", color: "var(--text-primary)" }}
       >
         <ThemeProvider>
-          <div
-            className="flex h-screen w-full overflow-hidden"
-            style={{ background: "var(--bg-base)" }}
-          >
-            <Sidebar />
-            <main className="flex-1 h-full overflow-y-auto flex flex-col">
-              {children}
-            </main>
-          </div>
+          <FeedbackProvider>
+            <div
+              className="flex h-screen w-full overflow-hidden"
+              style={{ background: "var(--bg-base)" }}
+            >
+              <Sidebar />
+              <main className="flex-1 h-full overflow-y-auto flex flex-col">
+                {children}
+              </main>
+            </div>
+          </FeedbackProvider>
         </ThemeProvider>
       </body>
     </html>

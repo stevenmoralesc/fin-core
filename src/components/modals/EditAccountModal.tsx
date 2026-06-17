@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, RefreshCw, Trash2, Settings } from "lucide-react";
 import type { AccountWithStats } from "@/app/cuentas/page";
 import { fromCents } from "@/lib/money";
+import { useFeedback } from "@/components/ui/Feedback";
 
 interface EditAccountModalProps {
   account: AccountWithStats;
@@ -11,9 +12,10 @@ interface EditAccountModalProps {
 }
 
 export default function EditAccountModal({ account, onClose }: EditAccountModalProps) {
+  const { toast, confirm } = useFeedback();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  
+
   const [form, setForm] = useState({
     name: account.name,
     type: account.type as "EFECTIVO" | "AHORROS" | "CORRIENTE",
@@ -39,15 +41,19 @@ export default function EditAccountModal({ account, onClose }: EditAccountModalP
       }
       onClose();
     } catch (err) {
-      alert("Error: " + (err as Error).message);
+      toast("error", (err as Error).message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm("¿Estás seguro de que deseas eliminar esta cuenta? Esto no se puede deshacer y solo es posible si no hay transacciones asociadas.")) return;
-    
+    if (!(await confirm({
+      title: "¿Eliminar cuenta?",
+      message: "Esto no se puede deshacer y solo es posible si no hay transacciones asociadas.",
+      danger: true,
+    }))) return;
+
     setDeleting(true);
     try {
       const res = await fetch(`/api/accounts/${account.id}`, {
@@ -59,7 +65,7 @@ export default function EditAccountModal({ account, onClose }: EditAccountModalP
       }
       onClose();
     } catch (err) {
-      alert("Error: " + (err as Error).message);
+      toast("error", (err as Error).message);
     } finally {
       setDeleting(false);
     }

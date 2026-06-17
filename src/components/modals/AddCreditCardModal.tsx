@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useFeedback } from "@/components/ui/Feedback";
 
 interface AddCreditCardModalProps {
   onClose: () => void;
@@ -10,6 +11,7 @@ interface AddCreditCardModalProps {
 
 export default function AddCreditCardModal({ onClose }: AddCreditCardModalProps) {
   const router = useRouter();
+  const { toast } = useFeedback();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -41,7 +43,7 @@ export default function AddCreditCardModal({ onClose }: AddCreditCardModalProps)
       router.refresh();
       onClose();
     } catch (err) {
-      alert("Error: " + (err as Error).message);
+      toast("error", (err as Error).message);
     } finally {
       setLoading(false);
     }

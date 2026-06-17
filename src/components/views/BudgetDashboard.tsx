@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { BudgetStats } from "@/app/presupuesto/page";
 import BudgetModal from "@/components/modals/BudgetModal";
 import { formatCents, formatCentsShort } from "@/lib/money";
+import { useFeedback } from "@/components/ui/Feedback";
 
 interface BudgetDashboardProps {
   initialStats: BudgetStats[];
@@ -38,6 +39,7 @@ const MIN_BAR_HEIGHT = 124; // px mínimos para que quepa el contenido
 
 export default function BudgetDashboard({ initialStats }: BudgetDashboardProps) {
   const router = useRouter();
+  const { toast, confirm } = useFeedback();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<BudgetStats | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -52,13 +54,13 @@ export default function BudgetDashboard({ initialStats }: BudgetDashboardProps) 
   const maxBudget = Math.max(...stats.map((s) => s.budget), 1);
 
   const handleDelete = async (category: string) => {
-    if (!confirm(`¿Eliminar el presupuesto de ${category}?`)) return;
+    if (!(await confirm({ title: `¿Eliminar el presupuesto de ${category}?`, danger: true }))) return;
     setIsDeleting(true);
     try {
       await fetch(`/api/budgets?category=${encodeURIComponent(category)}`, { method: "DELETE" });
       router.refresh();
     } catch {
-      alert("Error al eliminar");
+      toast("error", "Error al eliminar");
     } finally {
       setIsDeleting(false);
     }

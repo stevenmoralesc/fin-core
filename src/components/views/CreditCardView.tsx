@@ -15,6 +15,7 @@ import {
 import KpiCard from "@/components/dashboard/KpiCard";
 import { monthlyPayment } from "@/lib/credit";
 import { formatCents } from "@/lib/money";
+import { useFeedback } from "@/components/ui/Feedback";
 import InstallmentModal from "@/components/modals/InstallmentModal";
 import BillPaymentModal from "@/components/modals/BillPaymentModal";
 import AddCreditCardModal from "@/components/modals/AddCreditCardModal";
@@ -39,6 +40,7 @@ interface CreditCardViewProps {
 
 export default function CreditCardView({ initialData, accounts }: CreditCardViewProps) {
   const router = useRouter();
+  const { toast } = useFeedback();
   const [isPending, startTransition] = useTransition();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
@@ -123,7 +125,7 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
       });
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
-        alert("Error: " + (e.error ?? "No se pudo pagar la cuota"));
+        toast("error", e.error ?? "No se pudo pagar la cuota");
       }
       setPayInstallmentId(null);
       router.refresh();
@@ -344,10 +346,8 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
             {amortizadas.map((inst) => (
               <div
                 key={inst.id}
-                className="px-6 py-4 flex items-center justify-between opacity-70 hover:opacity-100 transition-all"
+                className="px-6 py-4 flex items-center justify-between opacity-70 hover:opacity-100 transition-all hover:bg-surface-2"
                 style={{ borderColor: "var(--border-subtle)" }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-surface-2)"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
               >
                 <div>
                   <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{inst.establishment}</p>

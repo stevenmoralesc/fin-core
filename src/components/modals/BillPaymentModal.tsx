@@ -5,6 +5,7 @@ import { X, RefreshCw, Wallet, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Account, CreditCard } from "@/lib/types";
 import { formatCents } from "@/lib/money";
+import { useFeedback } from "@/components/ui/Feedback";
 
 interface BillPaymentModalProps {
   card: CreditCard;
@@ -33,6 +34,7 @@ function accountIcon(type: string) {
 
 export default function BillPaymentModal({ card, billAmount, accounts, onClose }: BillPaymentModalProps) {
   const router = useRouter();
+  const { toast } = useFeedback();
   const [loading, setLoading] = useState(false);
   const [loadingBalances, setLoadingBalances] = useState(true);
   const [accountsWithBalance, setAccountsWithBalance] = useState<AccountWithBalance[]>([]);
@@ -79,7 +81,7 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
       router.refresh();
       onClose();
     } catch (error) {
-      alert("Error: " + (error as Error).message);
+      toast("error", (error as Error).message);
     } finally {
       setLoading(false);
     }

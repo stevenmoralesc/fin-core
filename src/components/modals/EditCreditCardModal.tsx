@@ -5,6 +5,7 @@ import { X, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { CreditCard } from "@/lib/types";
 import { fromCents } from "@/lib/money";
+import { useFeedback } from "@/components/ui/Feedback";
 
 interface EditCreditCardModalProps {
   card: CreditCard;
@@ -13,6 +14,7 @@ interface EditCreditCardModalProps {
 
 export default function EditCreditCardModal({ card, onClose }: EditCreditCardModalProps) {
   const router = useRouter();
+  const { toast } = useFeedback();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -47,7 +49,7 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
       router.refresh();
       onClose();
     } catch (err) {
-      alert("Error: " + (err as Error).message);
+      toast("error", (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -64,7 +66,7 @@ export default function EditCreditCardModal({ card, onClose }: EditCreditCardMod
       router.refresh();
       onClose();
     } catch (err) {
-      alert("Error: " + (err as Error).message);
+      toast("error", (err as Error).message);
     } finally {
       setDeleting(false);
     }

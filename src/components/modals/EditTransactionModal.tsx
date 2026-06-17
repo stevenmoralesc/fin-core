@@ -5,6 +5,7 @@ import { X, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Transaction, CategoriesByType } from "@/lib/types";
 import { fromCents } from "@/lib/money";
+import { useFeedback } from "@/components/ui/Feedback";
 
 interface EditTransactionModalProps {
   transaction: Pick<Transaction, "id" | "date" | "type" | "amount" | "category" | "description">;
@@ -20,6 +21,7 @@ export default function EditTransactionModal({
   onSuccess,
 }: EditTransactionModalProps) {
   const router = useRouter();
+  const { toast } = useFeedback();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -52,7 +54,7 @@ export default function EditTransactionModal({
       onSuccess?.();
       onClose();
     } catch (err) {
-      alert("Error: " + (err as Error).message);
+      toast("error", (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ export default function EditTransactionModal({
       onSuccess?.();
       onClose();
     } catch (err) {
-      alert("Error: " + (err as Error).message);
+      toast("error", (err as Error).message);
     } finally {
       setDeleting(false);
     }
@@ -87,10 +89,8 @@ export default function EditTransactionModal({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-surface-2"
             style={{ color: "var(--text-muted)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-2)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
             <X size={20} />
           </button>

@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { X, RefreshCw } from "lucide-react";
+import { useFeedback } from "@/components/ui/Feedback";
 
 interface AddAccountModalProps {
   onClose: () => void;
 }
 
 export default function AddAccountModal({ onClose }: AddAccountModalProps) {
+  const { toast } = useFeedback();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -36,7 +38,7 @@ export default function AddAccountModal({ onClose }: AddAccountModalProps) {
       }
       onClose();
     } catch (err) {
-      alert("Error: " + (err as Error).message);
+      toast("error", (err as Error).message);
     } finally {
       setLoading(false);
     }

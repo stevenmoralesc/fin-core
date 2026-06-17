@@ -84,16 +84,19 @@ export default function BudgetBars({ items }: { items: BudgetBarItem[] }) {
               style={{ height: TRACK_H + OVERFLOW_MAX }}
               title={`${cat.category} · ${formatCents(cat.spent)} de ${formatCents(cat.budget)}${over ? ` · excedido ${formatCents(cat.spent - cat.budget)}` : ""}`}
             >
-              {/* Relleno continuo (gasto), crece desde abajo y puede pasar el tope */}
+              {/* Relleno continuo (gasto), crece desde abajo y puede pasar el tope.
+                  Margen uniforme (6px) en los 3 lados cerrados para que el borde
+                  punteado quede visible también abajo, igual que en los laterales. */}
               {cat.spent > 0 && (
                 <div
-                  className="absolute bottom-0 transition-[height] duration-700 ease-out"
+                  className="absolute transition-[height] duration-700 ease-out"
                   style={{
                     left: 6,
                     right: 6,
+                    bottom: 7,
                     height: fillH,
                     background: color.fill,
-                    borderRadius: 18,
+                    borderRadius: "15px 15px 5px 5px",
                   }}
                 />
               )}

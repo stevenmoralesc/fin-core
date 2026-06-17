@@ -96,7 +96,7 @@ export default function BudgetBars({ items }: { items: BudgetBarItem[] }) {
                     bottom: 7,
                     height: fillH,
                     background: color.fill,
-                    borderRadius: "15px 15px 5px 5px",
+                    borderRadius: 15,
                   }}
                 />
               )}

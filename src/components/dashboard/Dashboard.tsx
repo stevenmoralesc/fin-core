@@ -6,7 +6,7 @@ import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, More
 import EditTransactionModal from "@/components/modals/EditTransactionModal";
 import TransactionModal from "@/components/modals/TransactionModal";
 import BudgetBars from "@/components/budget/BudgetBars";
-import { formatCents } from "@/lib/money";
+import { formatCents, formatCentsParts } from "@/lib/money";
 import { relativeDate } from "@/lib/format";
 import type { DashboardSummary, CategoriesByType, Transaction, Account } from "@/lib/types";
 
@@ -124,58 +124,80 @@ function MonthPickerPopover({
 }
 
 // ── Summary card (ingresos / gastos) ──────────────────────────
+// Tipografía split: entero bold grande + decimal muted más pequeño.
+// Icono pequeño top-right; fila inferior con label izq. y monto der.
 function SummaryCard({
   tone,
   icon: Icon,
   label,
-  value,
+  cents,
   pillLabel,
-  pillValue,
+  pillCents,
   pillIcon: PillIcon,
   pillEmpty,
 }: {
   tone: "income" | "expense";
   icon: typeof Wallet;
   label: string;
-  value: string;
+  cents: number;
   pillLabel: string;
-  pillValue: string;
+  pillCents: number;
   pillIcon: typeof TrendingUp;
   pillEmpty?: boolean;
 }) {
   const color = tone === "income" ? "var(--success)" : "var(--danger)";
   const softBg = tone === "income" ? "var(--success-bg)" : "var(--danger-bg)";
+  const { integer, decimal } = formatCentsParts(cents);
   return (
     <div
-      className="p-5 sm:p-6 rounded-3xl border-2 flex items-center gap-5"
+      className="p-6 rounded-3xl border flex flex-col"
       style={{
         background: "var(--bg-surface)",
-        borderColor: color,
+        borderColor: "var(--border)",
         boxShadow: "var(--shadow-sm)",
       }}
     >
-      <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-        style={{ background: softBg }}
-      >
-        <Icon size={26} strokeWidth={2.2} style={{ color }} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+      {/* Fila superior: label uppercase + icon button top-right */}
+      <div className="flex items-start justify-between gap-4">
+        <p className="text-[11px] font-bold uppercase tracking-widest pt-1" style={{ color: "var(--text-muted)" }}>
           {label}
         </p>
-        <p className="text-2xl sm:text-3xl font-bold tracking-tight tabular-nums mt-0.5 truncate" style={{ color: "var(--text-primary)" }}>
-          {value}
-        </p>
-        {pillEmpty ? (
-          <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{pillLabel}</p>
-        ) : (
-          <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full" style={{ background: softBg }}>
-            <PillIcon size={12} strokeWidth={2.5} style={{ color }} />
-            <span className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>{pillLabel}</span>
-            <span className="text-xs font-bold tabular-nums" style={{ color }}>{pillValue}</span>
-          </div>
-        )}
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: softBg }}
+        >
+          <Icon size={16} strokeWidth={2.2} style={{ color }} />
+        </div>
+      </div>
+
+      {/* Monto principal con tipografía split */}
+      <p
+        className="font-bold tracking-tight tabular-nums mt-3 truncate"
+        style={{ color: "var(--text-primary)", fontSize: "clamp(1.875rem, 3.5vw, 2.75rem)", lineHeight: 1.05 }}
+      >
+        {integer}
+        <span
+          className="font-bold"
+          style={{ color: "var(--text-placeholder)", fontSize: "0.55em" }}
+        >
+          {decimal}
+        </span>
+      </p>
+
+      {/* Fila inferior: label + icono izq., monto der. */}
+      <div className="flex items-center justify-between gap-3 mt-5">
+        <div className="flex items-center gap-2 min-w-0">
+          <PillIcon size={13} strokeWidth={2.5} style={{ color }} />
+          <span className="text-xs font-medium truncate" style={{ color: "var(--text-secondary)" }}>
+            {pillLabel}
+          </span>
+        </div>
+        <span
+          className="text-sm font-bold tabular-nums shrink-0"
+          style={{ color: pillEmpty ? "var(--text-placeholder)" : color }}
+        >
+          {pillEmpty ? "—" : formatCents(pillCents)}
+        </span>
       </div>
     </div>
   );
@@ -282,9 +304,9 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
           tone="income"
           icon={Wallet}
           label="Saldo disponible"
-          value={formatCOPShort(data.liquidezTotal)}
+          cents={data.liquidezTotal}
           pillLabel="Ingresos del periodo"
-          pillValue={formatCOPShort(data.ingresosDelPeriodo ?? 0)}
+          pillCents={data.ingresosDelPeriodo ?? 0}
           pillIcon={TrendingUp}
           pillEmpty={!data.ingresosDelPeriodo}
         />
@@ -292,9 +314,9 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
           tone="expense"
           icon={TrendingDown}
           label="Gastos del periodo"
-          value={formatCOPShort(data.gastosCorrientesMes)}
+          cents={data.gastosCorrientesMes}
           pillLabel="Pago TC pendiente"
-          pillValue={formatCOPShort(data.pagoTcPendiente ?? 0)}
+          pillCents={data.pagoTcPendiente ?? 0}
           pillIcon={CreditCard}
           pillEmpty={!data.pagoTcPendiente}
         />

@@ -40,6 +40,19 @@ export function formatCents(cents: number, signed = false): string {
   return value < 0 ? `−$${abs}` : `+$${abs}`;
 }
 
+/**
+ * Devuelve el monto formateado partido en entero ("$31.019.926") y
+ * decimal (",79"), para renderizar el decimal en una tipografía
+ * secundaria/muted. Si el monto no tiene parte fraccionaria, decimal = "".
+ */
+export function formatCentsParts(cents: number): { integer: string; decimal: string } {
+  const full = formatCents(cents);
+  // Locale es-CO: usa coma como separador decimal. Si no hay coma → no hay decimal.
+  const idx = full.lastIndexOf(",");
+  if (idx === -1) return { integer: full, decimal: "" };
+  return { integer: full.slice(0, idx), decimal: full.slice(idx) };
+}
+
 /** Versión abreviada para barras/etiquetas: 368000 cents → "3.680" … */
 export function formatCentsShort(cents: number): string {
   const value = fromCents(cents);

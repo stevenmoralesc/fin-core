@@ -48,41 +48,52 @@ export async function GET(req: NextRequest) {
     `).get(endDate, endDate) as { total: number | null };
     const totalLiquidity = rowLiquidez.total || 0;
 
-    // 2. Gastos Corrientes (strictly within the period + active installments)
-    const expenseRows = db.prepare(`
-      SELECT t.category, t.amount, t.debtReferenceId, c.totalAmount, c.totalMonths, c.monthlyInterest, c.status
-      FROM fact_transacciones t
-      LEFT JOIN fact_compras_cuotas c ON t.debtReferenceId = c.id
-      WHERE t.type = 'GASTO'
-        AND (
-          (t.debtReferenceId IS NULL AND t.date >= ? AND t.date <= ?)
-          OR
-          -- Devengo de cuotas: solo la compra original (accountId NULL),
-          -- nunca los pagos de cuota (que llevan accountId y ya redujeron el saldo).
-          (t.debtReferenceId IS NOT NULL AND t.accountId IS NULL AND c.status = 'VIGENTE' AND t.date <= ?)
-        )
-    `).all(startDate, endDate, endDate) as {
-      category: string;
-      amount: number;
-      debtReferenceId: string | null;
+    // 2. Gastos Corrientes del periodo. Dos fuentes:
+    //    (a) Gastos de contado: la fila de transacción cae dentro del periodo.
+    //    (b) Devengo de cuotas: una compra a TC devenga 1 cuota por mes, desde
+    //        purchaseDate (mes 1) hasta purchaseDate + totalMonths - 1 (mes N).
+    //        Es DETERMINISTA: no depende de status ni paidMonths, así el
+    //        histórico de meses pasados queda inmutable.
+    const contadoRows = db.prepare(`
+      SELECT category, amount
+      FROM fact_transacciones
+      WHERE type = 'GASTO'
+        AND debtReferenceId IS NULL
+        AND date >= ? AND date <= ?
+    `).all(startDate, endDate) as { category: string; amount: number }[];
+
+    const comprasRows = db.prepare(`
+      SELECT c.purchaseDate, c.totalAmount, c.totalMonths, c.monthlyInterest, t.category
+      FROM fact_compras_cuotas c
+      JOIN fact_transacciones t
+        ON t.debtReferenceId = c.id AND t.accountId IS NULL
+      WHERE c.purchaseDate <= ?
+    `).all(endDate) as {
+      purchaseDate: string;
       totalAmount: number;
       totalMonths: number;
       monthlyInterest: number;
-      status: string | null;
+      category: string;
     }[];
+
+    const targetMonthIndex = targetYear * 12 + (targetMonth - 1);
 
     let expenses = 0;
     const spentByCategory = new Map<string, number>();
-    for (const row of expenseRows) {
-      let rowSpent = 0;
-      if (row.debtReferenceId && row.status === 'VIGENTE') {
-        // Devengo: la cuota del mes de la compra diferida.
-        rowSpent = monthlyPayment(row);
-      } else if (!row.debtReferenceId) {
-        rowSpent = row.amount;
-      }
-      expenses += rowSpent;
-      spentByCategory.set(row.category, (spentByCategory.get(row.category) || 0) + rowSpent);
+
+    for (const row of contadoRows) {
+      expenses += row.amount;
+      spentByCategory.set(row.category, (spentByCategory.get(row.category) || 0) + row.amount);
+    }
+
+    for (const compra of comprasRows) {
+      const [py, pm] = compra.purchaseDate.slice(0, 10).split('-').map(Number);
+      const purchaseMonthIndex = py * 12 + (pm - 1);
+      const installmentIndex = targetMonthIndex - purchaseMonthIndex; // 0 = mes de compra
+      if (installmentIndex < 0 || installmentIndex >= compra.totalMonths) continue;
+      const cuota = monthlyPayment(compra);
+      expenses += cuota;
+      spentByCategory.set(compra.category, (spentByCategory.get(compra.category) || 0) + cuota);
     }
 
     // 2b. Ingresos del periodo (solo INGRESO, sin contar transferencias).
@@ -140,6 +151,7 @@ export async function GET(req: NextRequest) {
     const creditCardUsedPercent = creditCardLimit > 0 ? (creditCardUsed / creditCardLimit) * 100 : 0;
 
     // 4. Transacciones recientes del periodo (últimas 5) + total del periodo
+    //    Excluye filas "compra original" a cuotas (no son movimientos de caja).
     const txs = db.prepare(`
       SELECT t.id, t.type, t.date, t.amount, t.category, t.description, t.accountId, t.debtReferenceId,
              COALESCE(c.name, tc.name) AS paymentMethodName
@@ -148,12 +160,14 @@ export async function GET(req: NextRequest) {
       LEFT JOIN fact_compras_cuotas fcc ON t.debtReferenceId = fcc.id
       LEFT JOIN dim_tarjetas_credito tc ON fcc.creditCardId = tc.id
       WHERE t.date >= ? AND t.date <= ?
+        AND NOT (t.accountId IS NULL AND t.debtReferenceId IS NOT NULL)
       ORDER BY t.date DESC, t.createdAt DESC LIMIT 5
     `).all(startDate, endDate) as DashboardSummary["recentTransactions"];
 
     const periodTransactionsCount = (db.prepare(`
       SELECT COUNT(*) AS n FROM fact_transacciones
       WHERE date >= ? AND date <= ?
+        AND NOT (accountId IS NULL AND debtReferenceId IS NOT NULL)
     `).get(startDate, endDate) as { n: number }).n;
 
     // 5. Cuentas activas con saldo proyectado

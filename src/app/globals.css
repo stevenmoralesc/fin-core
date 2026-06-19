@@ -40,8 +40,8 @@
   /* Sidebar */
   --sidebar-bg:       #ffffff;
   --sidebar-border:   #f3f4f6;
-  --sidebar-item-active-bg: #f3f4f6;
-  --sidebar-item-active-text: #111827;
+  --sidebar-item-active-bg: var(--accent);
+  --sidebar-item-active-text: var(--accent-fg);
   --sidebar-item-text: #6b7280;
   --sidebar-item-hover: #f9fafb;
 
@@ -92,8 +92,8 @@
   /* Sidebar */
   --sidebar-bg:       #13151f;
   --sidebar-border:   #23263a;
-  --sidebar-item-active-bg: #23263a;
-  --sidebar-item-active-text: #f1f5f9;
+  --sidebar-item-active-bg: var(--accent);
+  --sidebar-item-active-text: var(--accent-fg);
   --sidebar-item-text: #64748b;
   --sidebar-item-hover: #1a1d27;
 

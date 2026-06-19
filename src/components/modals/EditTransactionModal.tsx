@@ -26,15 +26,36 @@ export default function EditTransactionModal({
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const [form, setForm] = useState({
-    type: transaction.type,
-    category: transaction.category,
-    amount: String(fromCents(transaction.amount)),
-    description: transaction.description ?? "",
-    date: transaction.date.split("T")[0],
+  const [form, setForm] = useState(() => {
+    const absValue = Math.abs(fromCents(transaction.amount));
+    const [int, dec] = String(absValue).split(".");
+    let formatted = parseInt(int, 10).toLocaleString("es-CO");
+    if (dec !== undefined) formatted += "," + dec;
+    
+    return {
+      type: transaction.type,
+      category: transaction.category,
+      amount: formatted,
+      description: transaction.description ?? "",
+      date: transaction.date.split("T")[0],
+    };
   });
 
   const categoriesForType = categories[form.type] ?? {};
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/[^0-9,]/g, "");
+    const parts = raw.split(",");
+    if (parts.length > 2) {
+      raw = parts[0] + "," + parts.slice(1).join("");
+    }
+    const [integer, decimal] = raw.split(",");
+    let formatted = integer ? parseInt(integer, 10).toLocaleString("es-CO") : "";
+    if (raw.includes(",")) {
+      formatted += "," + (decimal || "");
+    }
+    setForm((f) => ({ ...f, amount: formatted }));
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +66,7 @@ export default function EditTransactionModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          amount: Number(form.amount),
+          amount: Number(form.amount.replace(/\./g, "").replace(",", ".")),
           date: form.date,
         }),
       });
@@ -133,11 +154,10 @@ export default function EditTransactionModal({
             <div>
               <label className={labelClass}>Monto (COP)</label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                onChange={handleAmountChange}
                 className={inputClass}
                 required
               />

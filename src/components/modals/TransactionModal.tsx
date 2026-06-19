@@ -57,6 +57,20 @@ export default function TransactionModal({ accounts, creditCards, categories, on
     setForm((f) => ({ ...f, category: cat }));
   }
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/[^0-9,]/g, "");
+    const parts = raw.split(",");
+    if (parts.length > 2) {
+      raw = parts[0] + "," + parts.slice(1).join("");
+    }
+    const [integer, decimal] = raw.split(",");
+    let formatted = integer ? parseInt(integer, 10).toLocaleString("es-CO") : "";
+    if (raw.includes(",")) {
+      formatted += "," + (decimal || "");
+    }
+    setForm((f) => ({ ...f, amount: formatted }));
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.category || !form.amount) {
@@ -87,7 +101,7 @@ export default function TransactionModal({ accounts, creditCards, categories, on
         body: JSON.stringify({
           ...form,
           description: form.description || form.category,
-          amount: parseFloat(form.amount),
+          amount: parseFloat(form.amount.replace(/\./g, "").replace(",", ".")),
           paymentMethodId,
           paymentMethodType,
           destinationAccountId: form.type === "TRANSFERENCIA" ? form.destinationAccount : undefined,
@@ -180,11 +194,10 @@ export default function TransactionModal({ accounts, creditCards, categories, on
             {/* Monto */}
             <input
               ref={amountRef}
-              type="number"
-              min="0"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               value={form.amount}
-              onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+              onChange={handleAmountChange}
               placeholder="0"
               className="w-full text-3xl leading-tight font-bold bg-transparent outline-none text-center"
               style={{ minWidth: 0, color: amountColor }}

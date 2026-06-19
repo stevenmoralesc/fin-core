@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import KpiCard from "@/components/dashboard/KpiCard";
 import { monthlyPayment } from "@/lib/credit";
-import { formatCents } from "@/lib/money";
+import { formatCents, formatCentsParts } from "@/lib/money";
 import { useFeedback } from "@/components/ui/Feedback";
 import InstallmentModal from "@/components/modals/InstallmentModal";
 import BillPaymentModal from "@/components/modals/BillPaymentModal";
@@ -85,20 +85,23 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
 
   const usedPercent =
     stats.totalLimit > 0 ? Math.round((stats.usedLimit / stats.totalLimit) * 100) : 0;
+  const availablePercent = 100 - usedPercent;
 
   const kpiData = [
     {
       title: "Cupo Disponible",
-      value: formatCOPShort(stats.availableLimit),
-      subtitle: `Límite total: ${formatCOPShort(stats.totalLimit)}`,
+      value: formatCOP(stats.availableLimit),
+      valueParts: formatCentsParts(stats.availableLimit),
+      subtitle: `de ${formatCOPShort(stats.totalLimit)}`,
       icon: ShieldCheck,
-      trend: { value: `${100 - usedPercent}%`, positive: true, label: "libre" },
+      trend: { value: `${availablePercent}%`, positive: true, label: "del total" },
       variant: "success" as const,
       accentColor: "#10b981",
     },
     {
       title: "Cupo Utilizado",
-      value: formatCOPShort(stats.usedLimit),
+      value: formatCOP(stats.usedLimit),
+      valueParts: formatCentsParts(stats.usedLimit),
       subtitle: "Saldo pendiente en cuotas",
       icon: CreditCard,
       trend: { value: `${usedPercent}%`, positive: false, label: "del total" },
@@ -107,7 +110,8 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
     },
     {
       title: "Próxima Cuota",
-      value: formatCOPShort(stats.nextBillAmount),
+      value: formatCOP(stats.nextBillAmount),
+      valueParts: formatCentsParts(stats.nextBillAmount),
       subtitle: `Día de pago: ${card.paymentDay} de cada mes`,
       icon: AlertCircle,
       trend: { value: "Este mes", positive: false, label: "cuotas activas" },

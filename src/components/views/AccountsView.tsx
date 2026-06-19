@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 import AddAccountModal from "@/components/modals/AddAccountModal";
 import EditAccountModal from "@/components/modals/EditAccountModal";
 import { Settings } from "lucide-react";
-import { formatCents } from "@/lib/money";
+import { formatCents, formatCentsParts } from "@/lib/money";
 import { relativeDate } from "@/lib/format";
 
 // ── Helpers (los montos llegan en centavos enteros) ───────────
@@ -137,7 +137,15 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
                   </div>
                   <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5">
                     <p className="text-xl font-bold tabular-nums" style={{ color: acc.currentBalance < 0 ? "var(--danger)" : "var(--text-primary)" }}>
-                      {formatCOPShort(acc.currentBalance)}
+                      {(() => {
+                        const { integer, decimal } = formatCentsParts(acc.currentBalance);
+                        return (
+                          <>
+                            {integer}
+                            <span style={{ fontSize: "0.65em", opacity: 0.5 }}>{decimal}</span>
+                          </>
+                        );
+                      })()}
                     </p>
                     <div className="flex gap-3 mt-1 text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
                       <span className="flex items-center gap-0.5">
@@ -179,7 +187,7 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
                 {[
                   {
                     label: "Saldo Actual",
-                    value: formatCOP(selectedAccount.currentBalance),
+                    cents: selectedAccount.currentBalance,
                     sub: "Balance disponible",
                     color: selectedAccount.currentBalance >= 0 ? "text-success" : "text-danger",
                     bg: "bg-success-soft",
@@ -187,7 +195,7 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
                   },
                   {
                     label: "Total Ingresos",
-                    value: formatCOP(selectedAccount.totalIngresos),
+                    cents: selectedAccount.totalIngresos,
                     sub: "Acumulado histórico",
                     color: "text-info",
                     bg: "bg-info-soft",
@@ -195,7 +203,7 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
                   },
                   {
                     label: "Total Gastos",
-                    value: formatCOP(selectedAccount.totalGastos),
+                    cents: selectedAccount.totalGastos,
                     sub: "Acumulado histórico",
                     color: "text-danger",
                     bg: "bg-danger-soft",
@@ -207,7 +215,17 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
                       {kpi.icon}
                     </div>
                     <p className="text-[10px] leading-none font-bold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{kpi.label}</p>
-                    <p className={`text-base font-bold mt-1 tabular-nums ${kpi.color}`}>{kpi.value}</p>
+                    <p className={`text-base font-bold mt-1 tabular-nums ${kpi.color}`}>
+                      {(() => {
+                        const { integer, decimal } = formatCentsParts(kpi.cents);
+                        return (
+                          <>
+                            {integer}
+                            <span style={{ fontSize: "0.65em", opacity: 0.5 }}>{decimal}</span>
+                          </>
+                        );
+                      })()}
+                    </p>
                     <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{kpi.sub}</p>
                   </div>
                 ))}

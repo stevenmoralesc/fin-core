@@ -162,14 +162,19 @@ export default function TransactionsView({ transactions, categories }: Transacti
                     >
                       <div
                         className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ background: isIngreso ? "var(--success-bg)" : "var(--bg-surface-2)" }}
+                        style={{
+                          background:
+                            isIngreso ? "var(--success-bg)"
+                            : isTransfer ? "var(--bg-surface-2)"
+                            : "var(--danger-bg)",
+                        }}
                       >
                         {isIngreso ? (
-                          <ArrowDownLeft size={15} strokeWidth={2.5} style={{ color: "var(--success)" }} />
+                          <ArrowUpRight size={15} strokeWidth={2.5} style={{ color: "var(--success)" }} />
                         ) : isTransfer ? (
                           <ArrowLeftRight size={15} strokeWidth={2.5} style={{ color: "var(--text-secondary)" }} />
                         ) : (
-                          <ArrowUpRight size={15} strokeWidth={2.5} style={{ color: "var(--text-secondary)" }} />
+                          <ArrowDownLeft size={15} strokeWidth={2.5} style={{ color: "var(--danger)" }} />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">

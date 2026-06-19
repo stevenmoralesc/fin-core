@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, LucideIcon } from "lucide-react";
 interface KpiCardProps {
   title: string;
   value: string;
+  valueParts?: { integer: string; decimal: string };
   subtitle?: string;
   icon: LucideIcon;
   trend?: {
@@ -19,6 +20,7 @@ interface KpiCardProps {
 export default function KpiCard({
   title,
   value,
+  valueParts,
   subtitle,
   icon: Icon,
   trend,
@@ -64,8 +66,15 @@ export default function KpiCard({
 
       {/* Value */}
       <div>
-        <span className="text-2xl md:text-3xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
-          {value}
+        <span className="text-2xl md:text-3xl font-bold tracking-tight tabular-nums" style={{ color: "var(--text-primary)" }}>
+          {valueParts ? (
+            <>
+              {valueParts.integer}
+              <span style={{ color: "var(--text-placeholder)", fontSize: "0.65em" }}>{valueParts.decimal}</span>
+            </>
+          ) : (
+            value
+          )}
         </span>
       </div>
 

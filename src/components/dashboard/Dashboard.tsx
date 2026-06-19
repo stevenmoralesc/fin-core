@@ -258,26 +258,6 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
   return (
     <div className="w-full flex flex-col min-h-full">
 
-      {/* ── BLOQUE 1: CUENTAS (PILLS) ─────────────────────────── */}
-      <div
-        className="flex flex-wrap gap-2 w-full px-6 md:px-10 pt-6 pb-4 border-b"
-        style={{ borderColor: "var(--border-subtle)" }}
-      >
-        {data.cuentasActivas?.map((acc) => (
-          <div
-            key={acc.id}
-            className="rounded-xl px-3 py-1.5 text-xs flex items-center gap-2 border"
-            style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}
-          >
-            <Wallet size={12} className="shrink-0" style={{ color: "var(--text-muted)" }} />
-            <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{acc.name}</span>
-            <span className="font-bold" style={{ color: "var(--text-primary)" }}>{formatCOPShort((acc as Account & { currentBalance?: number }).currentBalance ?? 0)}</span>
-          </div>
-        ))}
-        {loading && (
-          <span className="text-xs italic self-center" style={{ color: "var(--text-muted)" }}>Actualizando...</span>
-        )}
-      </div>
 
       {/* ── contenido principal con padding ──────────────────── */}
       <div className="flex flex-col gap-8 px-6 md:px-10 py-8">
@@ -302,20 +282,20 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
       <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 w-full transition-opacity duration-300 ${loading ? "opacity-60" : "opacity-100"}`}>
         <SummaryCard
           tone="income"
-          icon={Wallet}
-          label="Saldo disponible"
-          cents={data.liquidezTotal}
-          pillLabel="Ingresos del periodo"
-          pillCents={data.ingresosDelPeriodo ?? 0}
-          pillIcon={TrendingUp}
-          pillEmpty={!data.ingresosDelPeriodo}
+          icon={TrendingUp}
+          label="Ingresos del periodo"
+          cents={data.ingresosDelPeriodo ?? 0}
+          pillLabel="Saldo disponible"
+          pillCents={data.liquidezTotal}
+          pillIcon={Wallet}
+          pillEmpty={false}
         />
         <SummaryCard
           tone="expense"
           icon={TrendingDown}
           label="Gastos del periodo"
           cents={data.gastosCorrientesMes}
-          pillLabel="Pago TC pendiente"
+          pillLabel="Pago TC"
           pillCents={data.pagoTcPendiente ?? 0}
           pillIcon={CreditCard}
           pillEmpty={!data.pagoTcPendiente}
@@ -413,8 +393,8 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
                   style={{
                     color:
                       tx.type === "INGRESO" ? "var(--success)"
-                      : tx.type === "GASTO" ? "var(--danger)"
-                      : "var(--text-secondary)",
+                      : tx.type === "TRANSFERENCIA" ? "var(--text-secondary)"
+                      : "var(--text-primary)",
                   }}
                 >
                   {tx.type === "INGRESO" ? "+" : tx.type === "TRANSFERENCIA" ? "" : "−"}{formatCOP(tx.amount, false)}

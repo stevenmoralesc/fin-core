@@ -24,7 +24,6 @@ export default function TransactionModal({ accounts, creditCards, categories, on
     amount: "",
     destinationAccount: "",
     description: "",
-    tags: "",
     paymentMethod: accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : "",
     installments: "1",
     date: (() => {
@@ -306,18 +305,7 @@ export default function TransactionModal({ accounts, creditCards, categories, on
             </div>
           )}
 
-          {/* ── Tags ──────────────────────────────────────────────── */}
-          <div>
-            <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Etiquetas (opcional)</p>
-            <input
-              type="text"
-              value={form.tags}
-              onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
-              placeholder="#supermercado #tarjeta"
-              className="w-full text-sm bg-transparent border-b pb-2 outline-none transition-colors"
-              style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
-            />
-          </div>
+
 
           {/* ── Error ─────────────────────────────────────────────── */}
           {error && (

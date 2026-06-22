@@ -3,205 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, MoreHorizontal, ChevronDown, ChevronRight, TrendingUp, TrendingDown, CreditCard } from "lucide-react";
-import EditTransactionModal from "@/components/modals/EditTransactionModal";
+import EditCreditCardModal from "@/components/modals/EditCreditCardModal";
+import TransactionList from "@/components/ui/TransactionList";
 import TransactionModal from "@/components/modals/TransactionModal";
 import BudgetBars from "@/components/budget/BudgetBars";
-import { formatCents, formatCentsParts } from "@/lib/money";
-import { relativeDate } from "@/lib/format";
+import MonthPickerPopover from "@/components/ui/MonthPickerPopover";
+import SummaryCard from "@/components/ui/SummaryCard";
 import type { DashboardSummary, CategoriesByType, Transaction, Account } from "@/lib/types";
-
-// ── Helpers (los montos llegan en centavos enteros) ───────────
-function formatCOP(value: number, showSign = true): string {
-  return formatCents(value, showSign);
-}
-
-function formatCOPShort(value: number): string {
-  return formatCents(value);
-}
-
-// ── Month picker popover ──────────────────────────────────────
-const MONTH_SHORT = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
-
-function MonthPickerPopover({
-  periodo,
-  onChange,
-}: {
-  periodo: string;
-  onChange: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const [selYear, selMonthIdx] = (() => {
-    const [y, m] = periodo.split("-");
-    return [parseInt(y), parseInt(m) - 1];
-  })();
-
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const [viewYear, setViewYear] = useState(selYear);
-  const years = [currentYear - 1, currentYear, currentYear + 1];
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const label = new Date(selYear, selMonthIdx, 1)
-    .toLocaleDateString("es-CO", { month: "long", year: "numeric" });
-
-  function select(monthIdx: number) {
-    const val = `${viewYear}-${(monthIdx + 1).toString().padStart(2, "0")}`;
-    onChange(val);
-    setOpen(false);
-  }
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-sm rounded-lg px-3 py-1.5 font-medium border transition-colors"
-        style={{ background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-primary)", boxShadow: "var(--shadow-sm)" }}
-      >
-        <span className="capitalize">{label}</span>
-        <ChevronDown size={13} className={`text-muted transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-
-      {open && (
-        <div
-          className="absolute left-0 top-full mt-2 z-50 rounded-2xl p-4 w-[240px] border"
-          style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-lg)" }}
-        >
-          {/* Year pills */}
-          <div className="flex gap-1.5 mb-3 justify-center">
-            {years.map((y) => (
-              <button
-                key={y}
-                type="button"
-                onClick={() => setViewYear(y)}
-                className="px-3 py-1 rounded-full text-xs font-semibold transition-colors"
-                style={viewYear === y
-                  ? { background: "var(--accent)", color: "var(--accent-fg)" }
-                  : { background: "var(--bg-surface-2)", color: "var(--text-secondary)" }}
-              >
-                {y}
-              </button>
-            ))}
-          </div>
-          {/* 3×4 month grid */}
-          <div className="grid grid-cols-4 gap-1.5">
-            {MONTH_SHORT.map((m, i) => {
-              const isSel = viewYear === selYear && i === selMonthIdx;
-              const isFuture = viewYear > currentYear || (viewYear === currentYear && i > now.getMonth());
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  disabled={isFuture}
-                  onClick={() => select(i)}
-                  className="py-2 rounded-xl text-xs font-semibold transition-colors"
-                  style={isSel
-                    ? { background: "var(--accent)", color: "var(--accent-fg)" }
-                    : isFuture
-                    ? { color: "var(--text-muted)", cursor: "default" }
-                    : { color: "var(--text-secondary)" }}
-                  onMouseEnter={(e) => { if (!isSel && !isFuture) e.currentTarget.style.background = "var(--bg-surface-2)"; }}
-                  onMouseLeave={(e) => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
-                >
-                  {m}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Summary card (ingresos / gastos) ──────────────────────────
-// Tipografía split: entero bold grande + decimal muted más pequeño.
-// Icono pequeño top-right; fila inferior con label izq. y monto der.
-function SummaryCard({
-  tone,
-  icon: Icon,
-  label,
-  cents,
-  pillLabel,
-  pillCents,
-  pillIcon: PillIcon,
-  pillEmpty,
-}: {
-  tone: "income" | "expense";
-  icon: typeof Wallet;
-  label: string;
-  cents: number;
-  pillLabel: string;
-  pillCents: number;
-  pillIcon: typeof TrendingUp;
-  pillEmpty?: boolean;
-}) {
-  const color = tone === "income" ? "var(--success)" : "var(--danger)";
-  const softBg = tone === "income" ? "var(--success-bg)" : "var(--danger-bg)";
-  const { integer, decimal } = formatCentsParts(cents);
-  return (
-    <div
-      className="p-6 rounded-3xl border flex flex-col"
-      style={{
-        background: "var(--bg-surface)",
-        borderColor: "var(--border)",
-        boxShadow: "var(--shadow-sm)",
-      }}
-    >
-      {/* Fila superior: label uppercase + icon button top-right */}
-      <div className="flex items-start justify-between gap-4">
-        <p className="text-[11px] font-bold uppercase tracking-widest pt-1" style={{ color: "var(--text-muted)" }}>
-          {label}
-        </p>
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: softBg }}
-        >
-          <Icon size={16} strokeWidth={2.2} style={{ color }} />
-        </div>
-      </div>
-
-      {/* Monto principal con tipografía split */}
-      <p
-        className="font-bold tracking-tight tabular-nums mt-3 truncate"
-        style={{ color: "var(--text-primary)", fontSize: "clamp(1.875rem, 3.5vw, 2.75rem)", lineHeight: 1.05 }}
-      >
-        {integer}
-        <span
-          className="font-bold"
-          style={{ color: "var(--text-placeholder)", fontSize: "0.55em" }}
-        >
-          {decimal}
-        </span>
-      </p>
-
-      {/* Fila inferior: label + icono izq., monto der. */}
-      <div className="flex items-center justify-between gap-3 mt-5">
-        <div className="flex items-center gap-2 min-w-0">
-          <PillIcon size={13} strokeWidth={2.5} style={{ color }} />
-          <span className="text-xs font-medium truncate" style={{ color: "var(--text-secondary)" }}>
-            {pillLabel}
-          </span>
-        </div>
-        <span
-          className="text-sm font-bold tabular-nums shrink-0"
-          style={{ color: pillEmpty ? "var(--text-placeholder)" : color }}
-        >
-          {pillEmpty ? "—" : formatCents(pillCents)}
-        </span>
-      </div>
-    </div>
-  );
-}
 
 // ── Dashboard props ───────────────────────────────────────────
 interface DashboardProps {
@@ -265,7 +73,6 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
       {/* ── BLOQUE 2: HEADER ──────────────────────────────────── */}
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Resumen</h1>
           <MonthPickerPopover periodo={periodo} onChange={setPeriodo} />
         </div>
         <button
@@ -283,22 +90,21 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
         <SummaryCard
           tone="income"
           icon={TrendingUp}
-          label="Ingresos del periodo"
+          label="Ingresos del mes"
           cents={data.ingresosDelPeriodo ?? 0}
-          pillLabel="Saldo disponible"
-          pillCents={data.liquidezTotal}
-          pillIcon={Wallet}
-          pillEmpty={false}
+          pill={{ label: "Saldo disponible", cents: data.liquidezTotal, icon: Wallet }}
         />
         <SummaryCard
           tone="expense"
           icon={TrendingDown}
-          label="Gastos del periodo"
+          label="Gastos del mes"
           cents={data.gastosCorrientesMes}
-          pillLabel="Pago TC"
-          pillCents={data.pagoTcPendiente ?? 0}
-          pillIcon={CreditCard}
-          pillEmpty={!data.pagoTcPendiente}
+          pill={{
+            label: "Pago Mínimo TC",
+            cents: data.pagoTcPendiente ?? 0,
+            icon: CreditCard,
+            empty: !data.pagoTcPendiente,
+          }}
         />
       </div>
 
@@ -307,7 +113,7 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
         <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "var(--border-subtle)" }}>
           <div>
             <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Presupuesto por categoría</h2>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Gasto del periodo frente al tope de cada categoría</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Gasto del mes frente al tope de cada categoría</p>
           </div>
           <Link
             href="/presupuesto"
@@ -355,60 +161,8 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
             <p className="text-xs mt-1" style={{ color: "var(--text-placeholder)" }}>Haz clic en «+ Nueva» para comenzar</p>
           </div>
         ) : (
-          <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
-            {data.recentTransactions.map((tx) => (
-              <div
-                key={tx.id}
-                className="flex items-center gap-4 px-6 py-4 transition-colors group cursor-default hover:bg-surface-2"
-                style={{ borderColor: "var(--border-subtle)" }}
-              >
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background:
-                      tx.type === "INGRESO" ? "var(--success-bg)"
-                      : tx.type === "GASTO" ? "var(--danger-bg)"
-                      : "var(--bg-surface-2)",
-                  }}
-                >
-                  {tx.type === "INGRESO" ? (
-                    <ArrowUpRight size={15} strokeWidth={2.5} style={{ color: "var(--success)" }} />
-                  ) : tx.type === "TRANSFERENCIA" ? (
-                    <ArrowLeftRight size={15} strokeWidth={2.5} style={{ color: "var(--text-secondary)" }} />
-                  ) : (
-                    <ArrowDownLeft size={15} strokeWidth={2.5} style={{ color: "var(--danger)" }} />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>{tx.description}</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    {tx.paymentMethodName ? (
-                      <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{tx.paymentMethodName} · </span>
-                    ) : ""}
-                    {tx.category} · {relativeDate(tx.date)}
-                  </p>
-                </div>
-                <span
-                  className="text-sm font-bold tabular-nums shrink-0"
-                  style={{
-                    color:
-                      tx.type === "INGRESO" ? "var(--success)"
-                      : tx.type === "TRANSFERENCIA" ? "var(--text-secondary)"
-                      : "var(--text-primary)",
-                  }}
-                >
-                  {tx.type === "INGRESO" ? "+" : tx.type === "TRANSFERENCIA" ? "" : "−"}{formatCOP(tx.amount, false)}
-                </span>
-                <button
-                  onClick={() => setEditingTx(tx as Transaction)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 flex items-center justify-center rounded-lg shrink-0 hover:bg-surface-3"
-                  style={{ color: "var(--text-muted)" }}
-                  title="Editar transacción"
-                >
-                  <MoreHorizontal size={14} />
-                </button>
-              </div>
-            ))}
+          <div className="p-1">
+            <TransactionList transactions={data.recentTransactions} categories={categories} />
           </div>
         )}
       </div>

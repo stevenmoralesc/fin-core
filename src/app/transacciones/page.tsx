@@ -5,9 +5,10 @@ import type { Transaction, CategoriesByType, SystemConfig } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 function getTransactions(): Transaction[] {
-  // Ledger = caja. Excluye las filas "compra original" a cuotas
-  // (accountId NULL + debtReferenceId NOT NULL): esas no movieron plata,
-  // viven en Tarjetas. Sí entran los pagos de cuota (accountId NOT NULL).
+  // El ledger muestra todos los movimientos en su fecha de origen, incluida
+  // la "compra original" a cuotas (debt) en el día que se hizo. Los totales
+  // del header NO se calculan aquí — se piden a /api/dashboard, que evita
+  // el doble conteo entre la compra y sus pagos de cuota.
   return db
     .prepare(
       `SELECT t.id, t.type, t.date, t.amount, t.category, t.description,
@@ -17,7 +18,6 @@ function getTransactions(): Transaction[] {
        LEFT JOIN dim_cuentas c ON t.accountId = c.id
        LEFT JOIN fact_compras_cuotas fcc ON t.debtReferenceId = fcc.id
        LEFT JOIN dim_tarjetas_credito tc ON fcc.creditCardId = tc.id
-       WHERE NOT (t.accountId IS NULL AND t.debtReferenceId IS NOT NULL)
        ORDER BY t.date DESC, t.createdAt DESC`
     )
     .all() as Transaction[];

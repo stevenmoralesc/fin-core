@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight, MoreHorizontal, Search, Receipt } from "lucide-react";
-import EditTransactionModal from "@/components/modals/EditTransactionModal";
-import type { Transaction, CategoriesByType } from "@/lib/types";
-import { formatCents } from "@/lib/money";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Receipt, TrendingUp, TrendingDown } from "lucide-react";
+import MonthPickerPopover from "@/components/ui/MonthPickerPopover";
+import TransactionList from "@/components/ui/TransactionList";
+import SummaryCard from "@/components/ui/SummaryCard";
+import type { Transaction, CategoriesByType, DashboardSummary } from "@/lib/types";
 
 interface TransactionsViewProps {
   transactions: Transaction[];
@@ -13,26 +13,6 @@ interface TransactionsViewProps {
 }
 
 type Filter = "TODOS" | "GASTO" | "INGRESO" | "TRANSFERENCIA";
-
-// Los montos llegan en centavos enteros.
-function formatCOP(value: number): string {
-  return formatCents(value);
-}
-
-function dateKey(iso: string): string {
-  return iso.slice(0, 10);
-}
-
-function dateLabel(key: string): string {
-  const date = new Date(key + "T12:00:00");
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diff = Math.floor((today.getTime() - target.getTime()) / 86_400_000);
-  if (diff === 0) return "Hoy";
-  if (diff === 1) return "Ayer";
-  return date.toLocaleDateString("es-CO", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
-}
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "TODOS", label: "Todos" },
@@ -42,15 +22,30 @@ const FILTERS: { value: Filter; label: string }[] = [
 ];
 
 export default function TransactionsView({ transactions, categories }: TransactionsViewProps) {
-  const router = useRouter();
   const [filter, setFilter] = useState<Filter>("TODOS");
   const [query, setQuery] = useState("");
-  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+
+  const [periodo, setPeriodo] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`;
+  });
+
+  // Totales sincronizados con /resumen (incluye devengo de cuotas en gastos).
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/dashboard?periodo=${periodo}`)
+      .then((r) => r.json())
+      .then((d) => { if (alive) setSummary(d); })
+      .catch(() => { if (alive) setSummary(null); });
+    return () => { alive = false; };
+  }, [periodo]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return transactions.filter((tx) => {
       if (filter !== "TODOS" && tx.type !== filter) return false;
+      if (!tx.date.startsWith(periodo)) return false;
       if (!q) return true;
       return (
         (tx.description ?? "").toLowerCase().includes(q) ||
@@ -58,47 +53,35 @@ export default function TransactionsView({ transactions, categories }: Transacti
         (tx.paymentMethodName ?? "").toLowerCase().includes(q)
       );
     });
-  }, [transactions, filter, query]);
-
-  const totals = useMemo(() => {
-    let ingresos = 0, gastos = 0;
-    for (const tx of filtered) {
-      if (tx.type === "INGRESO") ingresos += tx.amount;
-      else if (tx.type === "GASTO") gastos += tx.amount;
-    }
-    return { ingresos, gastos };
-  }, [filtered]);
-
-  const groups = useMemo(() => {
-    const map = new Map<string, Transaction[]>();
-    for (const tx of filtered) {
-      const key = dateKey(tx.date);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(tx);
-    }
-    return [...map.entries()];
-  }, [filtered]);
+  }, [transactions, filter, query, periodo]);
 
   return (
     <div className="w-full flex flex-col gap-6">
       {/* ── Header ── */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Movimientos</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Movimientos</h1>
+          <MonthPickerPopover periodo={periodo} onChange={setPeriodo} />
+        </div>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          {transactions.length} {transactions.length === 1 ? "movimiento registrado" : "movimientos registrados"}
+          {filtered.length} {filtered.length === 1 ? "movimiento registrado" : "movimientos registrados"}
         </p>
       </div>
 
-      {/* ── Totales del listado filtrado ── */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-2xl border p-4" style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Ingresos</span>
-          <p className="text-xl font-bold mt-1" style={{ color: "var(--success)" }}>+{formatCOP(totals.ingresos)}</p>
-        </div>
-        <div className="rounded-2xl border p-4" style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Gastos</span>
-          <p className="text-xl font-bold mt-1" style={{ color: "var(--text-primary)" }}>−{formatCOP(totals.gastos)}</p>
-        </div>
+      {/* ── Totales: mismo módulo que /resumen (sin pill). ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <SummaryCard
+          tone="income"
+          icon={TrendingUp}
+          label="Ingresos del mes"
+          cents={summary?.ingresosDelPeriodo ?? 0}
+        />
+        <SummaryCard
+          tone="expense"
+          icon={TrendingDown}
+          label="Gastos del mes"
+          cents={summary?.gastosCorrientesMes ?? 0}
+        />
       </div>
 
       {/* ── Filtros + búsqueda ── */}
@@ -135,7 +118,7 @@ export default function TransactionsView({ transactions, categories }: Transacti
       </div>
 
       {/* ── Lista agrupada por fecha ── */}
-      {groups.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center rounded-2xl border" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: "var(--bg-surface-2)" }}>
             <Receipt size={20} style={{ color: "var(--text-muted)" }} />
@@ -144,80 +127,7 @@ export default function TransactionsView({ transactions, categories }: Transacti
           <p className="text-xs mt-1" style={{ color: "var(--text-placeholder)" }}>Ajusta los filtros o registra una transacción</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-6">
-          {groups.map(([key, txs]) => (
-            <div key={key}>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2 px-1 capitalize" style={{ color: "var(--text-muted)" }}>
-                {dateLabel(key)}
-              </p>
-              <div className="rounded-2xl border overflow-hidden" style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-                {txs.map((tx, i) => {
-                  const isIngreso = tx.type === "INGRESO";
-                  const isTransfer = tx.type === "TRANSFERENCIA";
-                  return (
-                    <div
-                      key={tx.id}
-                      className="flex items-center gap-4 px-5 py-3.5 transition-colors group cursor-default hover:bg-surface-2"
-                      style={{ borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)" }}
-                    >
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                        style={{
-                          background:
-                            isIngreso ? "var(--success-bg)"
-                            : isTransfer ? "var(--bg-surface-2)"
-                            : "var(--danger-bg)",
-                        }}
-                      >
-                        {isIngreso ? (
-                          <ArrowUpRight size={15} strokeWidth={2.5} style={{ color: "var(--success)" }} />
-                        ) : isTransfer ? (
-                          <ArrowLeftRight size={15} strokeWidth={2.5} style={{ color: "var(--text-secondary)" }} />
-                        ) : (
-                          <ArrowDownLeft size={15} strokeWidth={2.5} style={{ color: "var(--danger)" }} />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
-                          {tx.description || tx.category}
-                        </p>
-                        <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
-                          {tx.paymentMethodName ? (
-                            <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{tx.paymentMethodName} · </span>
-                          ) : ""}
-                          {tx.category}
-                        </p>
-                      </div>
-                      <span
-                        className="text-sm font-bold tabular-nums shrink-0"
-                        style={{ color: isIngreso ? "var(--success)" : isTransfer ? "var(--text-secondary)" : "var(--text-primary)" }}
-                      >
-                        {isIngreso ? "+" : isTransfer ? "" : "−"}{formatCOP(tx.amount)}
-                      </span>
-                      <button
-                        onClick={() => setEditingTx(tx)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 flex items-center justify-center rounded-lg shrink-0 hover:bg-surface-3"
-                        style={{ color: "var(--text-muted)" }}
-                        title="Editar transacción"
-                      >
-                        <MoreHorizontal size={14} />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {editingTx && (
-        <EditTransactionModal
-          transaction={editingTx}
-          categories={categories}
-          onClose={() => setEditingTx(null)}
-          onSuccess={() => router.refresh()}
-        />
+        <TransactionList transactions={filtered} categories={categories} />
       )}
     </div>
   );

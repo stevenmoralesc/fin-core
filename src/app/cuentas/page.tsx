@@ -66,9 +66,24 @@ function getAccountsWithStats(): AccountWithStats[] {
 export default async function CuentasPage() {
   const accounts = await Promise.resolve(getAccountsWithStats());
 
+  const categories = await Promise.resolve(
+    (() => {
+      const rows = db
+        .prepare(`SELECT category, suggestedBudget, transactionType, icon FROM sys_config ORDER BY transactionType, category`)
+        .all() as import("@/lib/types").SystemConfig[];
+      const result: import("@/lib/types").CategoriesByType = { GASTO: {}, INGRESO: {}, TRANSFERENCIA: {} };
+      for (const row of rows) {
+        const t = row.transactionType ?? "GASTO";
+        if (!result[t][row.category]) result[t][row.category] = [];
+        result[t][row.category].push({ suggestedBudget: row.suggestedBudget, icon: row.icon });
+      }
+      return result;
+    })()
+  );
+
   return (
     <div className="px-6 md:px-10 py-8">
-      <AccountsView initialAccounts={accounts} />
+      <AccountsView initialAccounts={accounts} categories={categories} />
     </div>
   );
 }

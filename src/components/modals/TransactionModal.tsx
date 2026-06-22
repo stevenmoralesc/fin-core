@@ -217,31 +217,25 @@ export default function TransactionModal({ accounts, creditCards, categories, on
           {/* ── Categorías planas ───────────────────────────────── */}
           {!isTransferencia && (
           <div>
-            <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-2" style={{ color: "var(--text-muted)" }}>Categoría</p>
-            {flatCategories.length === 0 ? (
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Sin categorías para este tipo.</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {flatCategories.map((cat) => {
-                  const isSelected = form.category === cat;
-                  const catIcon = categoriesForType[cat]?.[0]?.icon || "📂";
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => selectCategory(cat)}
-                      className="flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border text-center transition-all"
-                      style={isSelected
-                        ? { background: "var(--accent)", borderColor: "var(--accent)", color: "var(--accent-fg)" }
-                        : { background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-secondary)" }}
-                    >
-                      <span className="text-xl leading-none">{catIcon}</span>
-                      <span className="text-[10px] font-semibold leading-tight truncate w-full text-center">{cat}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Categoría</p>
+            <select
+              value={form.category}
+              onChange={(e) => selectCategory(e.target.value)}
+              className={inputBase}
+              style={inputStyle}
+              required
+            >
+              <option value="" disabled>Selecciona...</option>
+              {flatCategories.length === 0 ? (
+                <option disabled>Sin categorías para este tipo</option>
+              ) : (
+                flatCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {categoriesForType[cat]?.[0]?.icon || "📂"} {cat}
+                  </option>
+                ))
+              )}
+            </select>
           </div>
           )}
 

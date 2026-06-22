@@ -12,16 +12,18 @@ import {
   Banknote,
   Building2,
   CreditCard,
+  Settings,
 } from "lucide-react";
 import type { AccountWithStats } from "@/app/cuentas/page";
 import { useRouter } from "next/navigation";
 import AddAccountModal from "@/components/modals/AddAccountModal";
 import EditAccountModal from "@/components/modals/EditAccountModal";
-import { Settings } from "lucide-react";
 import { formatCents, formatCentsParts } from "@/lib/money";
 import { relativeDate } from "@/lib/format";
+import type { CategoriesByType } from "@/lib/types";
 
 // ── Helpers (los montos llegan en centavos enteros) ───────────
+import TransactionList from "@/components/ui/TransactionList";
 function formatCOP(v: number) {
   return formatCents(v);
 }
@@ -48,9 +50,10 @@ function accountBg(type: string) {
 
 interface AccountsViewProps {
   initialAccounts: AccountWithStats[];
+  categories?: CategoriesByType;
 }
 
-export default function AccountsView({ initialAccounts }: AccountsViewProps) {
+export default function AccountsView({ initialAccounts, categories }: AccountsViewProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<string>(initialAccounts[0]?.id ?? "");
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -254,41 +257,8 @@ export default function AccountsView({ initialAccounts }: AccountsViewProps) {
                     <p className="text-xs text-placeholder mt-1">Usa esta cuenta en una nueva transacción</p>
                   </div>
                 ) : (
-                  <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
-                    {selectedAccount.recentTransactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-surface-2"
-                        style={{ borderColor: "var(--border-subtle)" }}
-                      >
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                            tx.type === "INGRESO" ? "bg-success-soft" : "bg-surface-3"
-                          }`}
-                        >
-                          {tx.type === "INGRESO" ? (
-                            <ArrowDownLeft size={15} className="text-success" strokeWidth={2.5} />
-                          ) : (
-                            <ArrowUpRight size={15} className="text-secondary" strokeWidth={2.5} />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
-                            {tx.description ?? `${tx.category}`}
-                          </p>
-                          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                            {tx.category} · {relativeDate(tx.date)}
-                          </p>
-                        </div>
-                        <span
-                          className={`text-sm font-bold tabular-nums shrink-0 ${
-                            tx.type === "INGRESO" ? "text-success" : "text-secondary"
-                          }`}
-                        >
-                          {tx.type === "INGRESO" ? "+" : "−"}{formatCOP(tx.amount)}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="pt-2">
+                    <TransactionList transactions={selectedAccount.recentTransactions} categories={categories} />
                   </div>
                 )}
               </div>

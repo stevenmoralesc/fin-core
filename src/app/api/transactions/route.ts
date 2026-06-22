@@ -13,12 +13,11 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type"); // INGRESO | GASTO | TRANSFERENCIA
     const accountId = searchParams.get("accountId");
 
-    // Ledger = caja. Excluye filas "compra original" a cuotas (accountId NULL + debtRef NOT NULL).
     let query = `
       SELECT id, date, type, category, amount, description,
              accountId, createdAt, updatedAt
       FROM fact_transacciones
-      WHERE NOT (accountId IS NULL AND debtReferenceId IS NOT NULL)
+      WHERE 1=1
     `;
     const params: unknown[] = [];
 

@@ -36,16 +36,13 @@ export default function BudgetModal({
   const router = useRouter();
   const { toast } = useFeedback();
   const [loading, setLoading] = useState(false);
+  const [showEmojis, setShowEmojis] = useState(false);
 
   const isEditing = !!initialCategory;
-  const existingCategories = Array.from(new Set(categories));
-
-  const [categoryType, setCategoryType] = useState<"SELECT" | "NEW">(initialCategory ? "SELECT" : "NEW");
 
   const [form, setForm] = useState({
     transactionType: (initialType ?? "GASTO") as TxType,
     category: initialCategory || "",
-    newCategory: "",
     suggestedBudget: initialBudget ? String(fromCents(initialBudget)) : "",
     icon: initialIcon || "📌",
   });
@@ -56,7 +53,7 @@ export default function BudgetModal({
     e.preventDefault();
     setLoading(true);
 
-    const finalCategory = categoryType === "NEW" ? form.newCategory.trim() : form.category;
+    const finalCategory = form.category.trim();
 
     if (!finalCategory) {
       toast("error", "Debes seleccionar o ingresar una categoría.");
@@ -128,84 +125,66 @@ export default function BudgetModal({
 
           {/* Categoría */}
           <div>
-            <div className="flex items-center justify-between">
-              <label className="block text-[10px] leading-none font-bold text-muted uppercase tracking-wide">Nombre</label>
-              {!isEditing && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCategoryType(categoryType === "SELECT" ? "NEW" : "SELECT");
-                    setForm((f) => ({ ...f, category: "", newCategory: "" }));
-                  }}
-                  className="text-xs font-bold"
-                  style={{ color: "var(--info)" }}
-                >
-                  {categoryType === "SELECT" ? "+ Nueva" : "Usar existente"}
-                </button>
-              )}
-            </div>
-            {categoryType === "SELECT" ? (
-              <select
-                value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                className={inputClass}
-                style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
-                disabled={isEditing}
-                required
-              >
-                <option value="" disabled>Seleccione una categoría</option>
-                {existingCategories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                value={form.newCategory}
-                onChange={(e) => setForm((f) => ({ ...f, newCategory: e.target.value }))}
-                placeholder="Ej. Vivienda, Transporte"
-                className={inputClass}
-                style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
-                required
-              />
-            )}
+            <label className="block text-[10px] leading-none font-bold text-muted uppercase tracking-wide">Nombre</label>
+            <input
+              type="text"
+              value={form.category}
+              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+              placeholder="Ej. Vivienda, Transporte"
+              className={inputClass}
+              style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
+              disabled={isEditing}
+              required
+            />
           </div>
 
           {/* Emoji */}
           <div>
             <label className={labelClass}>Emoji de la categoría</label>
             <div className="flex items-center gap-3 mt-1">
-              <div className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-2xl border" style={{ background: "var(--bg-surface-2)", borderColor: "var(--border)" }}>
+              <button
+                type="button"
+                onClick={() => setShowEmojis(!showEmojis)}
+                className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-2xl border transition-colors hover:bg-surface-3"
+                style={{ background: "var(--bg-surface-2)", borderColor: "var(--border)" }}
+                title="Mostrar/ocultar emojis"
+              >
                 {form.icon || "📌"}
-              </div>
+              </button>
               <input
                 type="text"
                 value={form.icon}
                 onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
-                placeholder="Pega cualquier emoji"
+                placeholder="Pega un emoji o toca el ícono"
                 className={inputClass}
                 style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
               />
             </div>
-            <div className="grid grid-cols-8 gap-1.5 mt-3">
-              {EMOJI_OPTIONS.map((emoji) => {
-                const selected = form.icon === emoji;
-                return (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, icon: emoji }))}
-                    className="aspect-square rounded-lg flex items-center justify-center text-lg transition-all border"
-                    style={{
-                      background: selected ? "var(--bg-surface-3)" : "transparent",
-                      borderColor: selected ? "var(--text-primary)" : "transparent",
-                    }}
-                  >
-                    {emoji}
-                  </button>
-                );
-              })}
-            </div>
+            
+            {showEmojis && (
+              <div className="grid grid-cols-8 gap-1.5 mt-3 p-3 rounded-2xl border" style={{ background: "var(--bg-surface)", borderColor: "var(--border-subtle)" }}>
+                {EMOJI_OPTIONS.map((emoji) => {
+                  const selected = form.icon === emoji;
+                  return (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        setForm((f) => ({ ...f, icon: emoji }));
+                        setShowEmojis(false);
+                      }}
+                      className="aspect-square rounded-lg flex items-center justify-center text-lg transition-all border"
+                      style={{
+                        background: selected ? "var(--bg-surface-3)" : "transparent",
+                        borderColor: selected ? "var(--text-primary)" : "transparent",
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Tope (solo GASTO) */}

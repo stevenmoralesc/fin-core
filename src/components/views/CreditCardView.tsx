@@ -212,14 +212,6 @@ export default function CreditCardView({ initialData, accounts }: CreditCardView
             <Receipt size={16} />
             Pagar Factura
           </button>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
-            style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
-          >
-            <Plus size={16} />
-            Nueva Compra
-          </button>
         </div>
       </div>
 

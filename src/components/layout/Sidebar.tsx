@@ -10,10 +10,10 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const links = [
-    { name: "Dashboard", href: "/", icon: BarChart3 },
+    { name: "Resumen", href: "/", icon: BarChart3 },
     { name: "Movimientos", href: "/transacciones", icon: ArrowLeftRight },
-    { name: "Tarjetas", href: "/tarjetas", icon: CreditCard },
     { name: "Cuentas", href: "/cuentas", icon: Wallet },
+    { name: "Tarjetas", href: "/tarjetas", icon: CreditCard },
     { name: "Categorías", href: "/presupuesto", icon: Tags },
   ];
 

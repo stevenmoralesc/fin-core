@@ -3,8 +3,14 @@
 import { useState } from "react";
 import { X, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { Theme as EmojiTheme, EmojiStyle, type EmojiClickData } from "emoji-picker-react";
 import { fromCents } from "@/lib/money";
 import { useFeedback } from "@/components/ui/Feedback";
+import { useTheme } from "@/components/layout/ThemeProvider";
+
+// EmojiPicker es client-only; con next/dynamic evitamos el SSR.
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 type TxType = "INGRESO" | "GASTO" | "TRANSFERENCIA";
 
@@ -17,14 +23,6 @@ interface BudgetModalProps {
   initialIcon?: string;
 }
 
-// Emojis sugeridos para categorías comunes
-const EMOJI_OPTIONS = [
-  "🍔", "🍕", "🛒", "☕", "🍺", "🏠", "🚗", "⛽",
-  "💡", "📱", "💻", "🎮", "🎬", "🎵", "👕", "🛍️",
-  "✈️", "🏖️", "💊", "🏥", "🎓", "📚", "🐶", "🎁",
-  "💰", "💳", "🏦", "💼", "🏋️", "✂️", "🔧", "🌐",
-];
-
 export default function BudgetModal({
   onClose,
   categories,
@@ -35,6 +33,7 @@ export default function BudgetModal({
 }: BudgetModalProps) {
   const router = useRouter();
   const { toast } = useFeedback();
+  const { resolved: themeMode } = useTheme();
   const [loading, setLoading] = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
 
@@ -106,7 +105,7 @@ export default function BudgetModal({
           <div>
             <label className="block text-[10px] leading-none font-bold text-muted uppercase tracking-wide mb-1">Tipo</label>
             <div className="flex gap-2 mt-1.5">
-              {(["GASTO", "INGRESO", "TRANSFERENCIA"] as const).map((t) => (
+              {(["GASTO", "INGRESO"] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -117,72 +116,51 @@ export default function BudgetModal({
                     ? { background: "var(--accent)", color: "var(--accent-fg)", borderColor: "var(--accent)" }
                     : { background: "transparent", color: "var(--text-secondary)", borderColor: "var(--border)" }}
                 >
-                  {t === "GASTO" ? "Gasto" : t === "INGRESO" ? "Ingreso" : "Transf."}
+                  {t === "GASTO" ? "Gasto" : "Ingreso"}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Categoría */}
+          {/* Emoji + Nombre en la misma fila */}
           <div>
             <label className="block text-[10px] leading-none font-bold text-muted uppercase tracking-wide">Nombre</label>
-            <input
-              type="text"
-              value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-              placeholder="Ej. Vivienda, Transporte"
-              className={inputClass}
-              style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
-              disabled={isEditing}
-              required
-            />
-          </div>
-
-          {/* Emoji */}
-          <div>
-            <label className={labelClass}>Emoji de la categoría</label>
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-end gap-3">
               <button
                 type="button"
                 onClick={() => setShowEmojis(!showEmojis)}
                 className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-2xl border transition-colors hover:bg-surface-3"
                 style={{ background: "var(--bg-surface-2)", borderColor: "var(--border)" }}
-                title="Mostrar/ocultar emojis"
+                title="Elegir emoji"
               >
                 {form.icon || "📌"}
               </button>
               <input
                 type="text"
-                value={form.icon}
-                onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
-                placeholder="Pega un emoji o toca el ícono"
+                value={form.category}
+                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                placeholder="Ej. Vivienda, Transporte"
                 className={inputClass}
                 style={{ color: "var(--text-primary)", borderColor: "var(--border)" }}
+                disabled={isEditing}
+                required
               />
             </div>
-            
+
             {showEmojis && (
-              <div className="grid grid-cols-8 gap-1.5 mt-3 p-3 rounded-2xl border" style={{ background: "var(--bg-surface)", borderColor: "var(--border-subtle)" }}>
-                {EMOJI_OPTIONS.map((emoji) => {
-                  const selected = form.icon === emoji;
-                  return (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => {
-                        setForm((f) => ({ ...f, icon: emoji }));
-                        setShowEmojis(false);
-                      }}
-                      className="aspect-square rounded-lg flex items-center justify-center text-lg transition-all border"
-                      style={{
-                        background: selected ? "var(--bg-surface-3)" : "transparent",
-                        borderColor: selected ? "var(--text-primary)" : "transparent",
-                      }}
-                    >
-                      {emoji}
-                    </button>
-                  );
-                })}
+              <div className="mt-3 flex justify-center">
+                <EmojiPicker
+                  onEmojiClick={(e: EmojiClickData) => {
+                    setForm((f) => ({ ...f, icon: e.emoji }));
+                    setShowEmojis(false);
+                  }}
+                  theme={themeMode === "dark" ? EmojiTheme.DARK : EmojiTheme.LIGHT}
+                  emojiStyle={EmojiStyle.NATIVE}
+                  width="100%"
+                  height={380}
+                  searchPlaceholder="Buscar emoji…"
+                  previewConfig={{ showPreview: false }}
+                />
               </div>
             )}
           </div>

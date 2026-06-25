@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const { type, category, amount, description, paymentMethodId, paymentMethodType, installments, date, destinationAccountId: destAccountIdInput } = body;
 
     // Validación básica
-    if (!type || !category || amount === undefined || !paymentMethodId || !paymentMethodType) {
+    if (!type || amount === undefined || !paymentMethodId || !paymentMethodType) {
       return Response.json(
         { error: "Campos requeridos faltantes" },
         { status: 400 }
@@ -57,6 +57,13 @@ export async function POST(request: NextRequest) {
 
     if (!["INGRESO", "GASTO", "TRANSFERENCIA"].includes(type)) {
       return Response.json({ error: "type debe ser INGRESO, GASTO o TRANSFERENCIA" }, { status: 400 });
+    }
+
+    // Las transferencias internas no llevan categoría: el evento se describe
+    // por las cuentas origen y destino. Forzamos el sentinel del lado servidor.
+    const txCategory = type === "TRANSFERENCIA" ? "Transferencia" : category;
+    if (!txCategory) {
+      return Response.json({ error: "La categoría es requerida" }, { status: 400 });
     }
 
     const amountNum = Number(amount);
@@ -141,7 +148,7 @@ export async function POST(request: NextRequest) {
         id,
         date: txDate,
         type,
-        category,
+        category: txCategory,
         amount: toCents(amountNum),
         description: description ?? null,
         accountId,

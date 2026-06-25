@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, TrendingDown, TrendingUp, ArrowLeftRight } from "lucide-react";
+import { Plus, Pencil, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { CategoryItem } from "@/app/presupuesto/page";
 import BudgetModal from "@/components/modals/BudgetModal";
@@ -12,12 +12,12 @@ interface Props {
   initialCategories: CategoryItem[];
 }
 
-type TxType = "GASTO" | "INGRESO" | "TRANSFERENCIA";
+// Solo Gasto e Ingreso: las transferencias internas no llevan categoría.
+type TxType = "GASTO" | "INGRESO";
 
 const SECTIONS: { type: TxType; label: string; icon: typeof TrendingDown; color: string; bg: string }[] = [
   { type: "GASTO", label: "Gastos", icon: TrendingDown, color: "var(--danger)", bg: "var(--danger-bg)" },
   { type: "INGRESO", label: "Ingresos", icon: TrendingUp, color: "var(--success)", bg: "var(--success-bg)" },
-  { type: "TRANSFERENCIA", label: "Transferencias", icon: ArrowLeftRight, color: "var(--info)", bg: "var(--info-bg)" },
 ];
 
 export default function CategoriesManager({ initialCategories }: Props) {

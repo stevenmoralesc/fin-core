@@ -130,22 +130,15 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
       </div>
 
       {/* ── BLOQUE 4: TRANSACCIONES RECIENTES ─────────────────── */}
-      <div className="rounded-2xl w-full overflow-hidden border" style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "var(--border-subtle)" }}>
-          <div>
-            <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Transacciones recientes</h2>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              {data.periodTransactionsCount > 0
-                ? `Últimas ${data.recentTransactions.length} de ${data.periodTransactionsCount} movimientos del periodo`
-                : "Sin movimientos en este periodo"}
-            </p>
-          </div>
+      <div className="w-full">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
+            Transacciones recientes
+          </h2>
           <Link
             href="/transacciones"
             className="flex items-center gap-1 text-xs font-semibold transition-colors shrink-0"
-            style={{ color: "#6366f1" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#4f46e5")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#6366f1")}
+            style={{ color: "var(--info)" }}
           >
             Ver todas
             <ChevronRight size={14} />
@@ -153,7 +146,7 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
         </div>
 
         {(!data.recentTransactions || data.recentTransactions.length === 0) ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: "var(--bg-surface-2)" }}>
               <ShoppingCart size={20} style={{ color: "var(--text-muted)" }} />
             </div>
@@ -161,9 +154,12 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
             <p className="text-xs mt-1" style={{ color: "var(--text-placeholder)" }}>Haz clic en «+ Nueva» para comenzar</p>
           </div>
         ) : (
-          <div className="p-1">
-            <TransactionList transactions={data.recentTransactions} categories={categories} />
-          </div>
+          <TransactionList
+            transactions={data.recentTransactions}
+            categories={categories}
+            mode="flat"
+            showRelativeDate
+          />
         )}
       </div>
 

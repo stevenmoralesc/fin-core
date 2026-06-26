@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Transaction, CategoriesByType } from "@/lib/types";
 import { fromCents } from "@/lib/money";
 import { useFeedback } from "@/components/ui/Feedback";
+import CalendarPicker from "@/components/ui/CalendarPicker";
 
 interface EditTransactionModalProps {
   transaction: Pick<Transaction, "id" | "date" | "type" | "amount" | "category" | "description">;
@@ -25,6 +26,7 @@ export default function EditTransactionModal({
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const [form, setForm] = useState(() => {
     const absValue = Math.abs(fromCents(transaction.amount));
@@ -141,15 +143,30 @@ export default function EditTransactionModal({
 
           {/* Fecha y Monto */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="relative">
               <label className={labelClass}>Fecha</label>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+              <button
+                type="button"
+                onClick={() => setCalendarOpen(!calendarOpen)}
                 className={inputClass}
-                required
-              />
+                style={{ textAlign: "left", cursor: "pointer" }}
+              >
+                {form.date
+                  ? new Date(form.date + "T12:00:00").toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })
+                  : "Selecciona..."}
+              </button>
+              {calendarOpen && (
+                <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 60, marginTop: 4 }}>
+                  <CalendarPicker
+                    value={form.date}
+                    onChange={(iso) => {
+                      setForm((f) => ({ ...f, date: iso }));
+                      setCalendarOpen(false);
+                    }}
+                    onClose={() => setCalendarOpen(false)}
+                  />
+                </div>
+              )}
             </div>
             <div>
               <label className={labelClass}>Monto (COP)</label>

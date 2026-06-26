@@ -31,6 +31,7 @@ import {
 import { useRouter } from "next/navigation";
 import { formatCents, toCents } from "@/lib/money";
 import AccountPickerSheet from "@/components/modals/AccountPickerSheet";
+import CalendarPicker from "@/components/ui/CalendarPicker";
 
 // ─── Tipos locales ────────────────────────────────────────────
 
@@ -135,9 +136,9 @@ export default function TransferModal({ accounts, onClose, onSuccess }: Props) {
   const [error, setError] = useState("");
   /** Picker abierto: "origin" | "destination" | null */
   const [pickerSide, setPickerSide] = useState<"origin" | "destination" | null>(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const amountRef = useRef<HTMLInputElement>(null);
-  const dateRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     amountRef.current?.focus();
@@ -436,9 +437,7 @@ export default function TransferModal({ accounts, onClose, onSuccess }: Props) {
           {/* Fecha */}
           <button
             type="button"
-            onClick={() => {
-              setTimeout(() => dateRef.current?.showPicker?.(), 0);
-            }}
+            onClick={() => setCalendarOpen(true)}
             className="flex items-center gap-3 w-full px-[14px] py-3 rounded-[14px] mb-[22px] text-left"
             style={{ background: "var(--bg-surface-2)" }}
           >
@@ -471,16 +470,31 @@ export default function TransferModal({ accounts, onClose, onSuccess }: Props) {
               </span>
             </span>
             <ChevronRight size={18} style={{ color: "var(--text-placeholder)" }} />
-            <input
-              ref={dateRef}
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="sr-only"
-              aria-hidden
-              tabIndex={-1}
-            />
           </button>
+          {calendarOpen && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 70,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0,0,0,0.25)",
+                backdropFilter: "blur(2px)",
+              }}
+              onClick={(e) => { if (e.target === e.currentTarget) setCalendarOpen(false); }}
+            >
+              <CalendarPicker
+                value={date}
+                onChange={(iso) => {
+                  setDate(iso);
+                  setCalendarOpen(false);
+                }}
+                onClose={() => setCalendarOpen(false)}
+              />
+            </div>
+          )}
 
           {/* Error */}
           {error && (

@@ -5,6 +5,7 @@ import { X, RefreshCw, CreditCard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { CreditCard as CreditCardType } from "@/lib/types";
 import { useFeedback } from "@/components/ui/Feedback";
+import CalendarPicker from "@/components/ui/CalendarPicker";
 
 interface InstallmentModalProps {
   onClose: () => void;
@@ -16,6 +17,7 @@ export default function InstallmentModal({ onClose, cards, preselectedCardId }: 
   const router = useRouter();
   const { toast } = useFeedback();
   const [loading, setLoading] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [form, setForm] = useState({
     creditCardId: preselectedCardId ?? cards[0]?.id ?? "",
     establishment: "",
@@ -132,15 +134,42 @@ export default function InstallmentModal({ onClose, cards, preselectedCardId }: 
           </div>
 
           {/* Fecha */}
-          <div>
+          <div className="relative">
             <label className={labelClass}>Fecha de Compra</label>
-            <input
-              type="date"
-              value={form.purchaseDate}
-              onChange={(e) => setForm((f) => ({ ...f, purchaseDate: e.target.value }))}
+            <button
+              type="button"
+              onClick={() => setCalendarOpen(true)}
               className={inputClass}
-              required
-            />
+              style={{ textAlign: "left", cursor: "pointer" }}
+            >
+              {form.purchaseDate
+                ? new Date(form.purchaseDate + "T12:00:00").toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })
+                : "Selecciona..."}
+            </button>
+            {calendarOpen && (
+              <div
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 70,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(0,0,0,0.25)",
+                  backdropFilter: "blur(2px)",
+                }}
+                onClick={(e) => { if (e.target === e.currentTarget) setCalendarOpen(false); }}
+              >
+                <CalendarPicker
+                  value={form.purchaseDate}
+                  onChange={(iso) => {
+                    setForm((f) => ({ ...f, purchaseDate: iso }));
+                    setCalendarOpen(false);
+                  }}
+                  onClose={() => setCalendarOpen(false)}
+                />
+              </div>
+            )}
           </div>
 
           {/* Monto + Cuotas en misma fila */}

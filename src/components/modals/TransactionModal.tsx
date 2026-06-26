@@ -28,12 +28,14 @@ import {
   ArrowLeftRight,
   RefreshCw,
 } from "lucide-react";
+import CalendarPicker from "@/components/ui/CalendarPicker";
 import type {
   Account,
   CreditCard as CreditCardType,
   CategoriesByType,
 } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import AccountPickerSheet from "@/components/modals/AccountPickerSheet";
 
 type TxType = "INGRESO" | "GASTO" | "TRANSFERENCIA";
 
@@ -124,7 +126,6 @@ export default function TransactionModal({
   const [dateOpen, setDateOpen] = useState(false);
 
   const amountRef = useRef<HTMLInputElement>(null);
-  const dateRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus monto al abrir
   useEffect(() => {
@@ -488,50 +489,31 @@ export default function TransactionModal({
               onClick={() => setPmOpen((o) => !o)}
             />
             {pmOpen && (
-              <div
-                className="rounded-2xl border overflow-hidden"
-                style={{
-                  background: "var(--bg-surface)",
-                  borderColor: "var(--border)",
+              <AccountPickerSheet
+                title={isTransferOnly ? "Cuenta origen" : "Medio de pago"}
+                accounts={[
+                  ...accounts.map((acc) => ({
+                    id: `ACCOUNT:${acc.id}`,
+                    name: acc.name,
+                    type: acc.type || "AHORROS",
+                    currentBalance: (acc as any).currentBalance ?? 0,
+                  })),
+                  ...(isGasto && !isTransferOnly
+                    ? creditCards.map((cc) => ({
+                        id: `CREDIT_CARD:${cc.id}`,
+                        name: cc.name,
+                        type: "Crédito",
+                        currentBalance: cc.totalLimit ?? 0,
+                      }))
+                    : []),
+                ]}
+                selectedId={form.paymentMethod}
+                onSelect={(id) => {
+                  setForm((f) => ({ ...f, paymentMethod: id }));
+                  setPmOpen(false);
                 }}
-              >
-                <select
-                  value={form.paymentMethod}
-                  onChange={(e) => {
-                    setForm((f) => ({ ...f, paymentMethod: e.target.value }));
-                    setPmOpen(false);
-                  }}
-                  className="w-full text-sm px-4 py-2 outline-none"
-                  style={{
-                    background: "var(--bg-surface)",
-                    color: "var(--text-primary)",
-                  }}
-                  autoFocus
-                >
-                  <optgroup label="Cuentas / Efectivo">
-                    {accounts.map((acc) => (
-                      <option
-                        key={`ACCOUNT:${acc.id}`}
-                        value={`ACCOUNT:${acc.id}`}
-                      >
-                        {acc.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                  {isGasto && !isTransferOnly && creditCards.length > 0 && (
-                    <optgroup label="Tarjetas de Crédito">
-                      {creditCards.map((cc) => (
-                        <option
-                          key={`CREDIT_CARD:${cc.id}`}
-                          value={`CREDIT_CARD:${cc.id}`}
-                        >
-                          {cc.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-              </div>
+                onClose={() => setPmOpen(false)}
+              />
             )}
 
             {/* Cuenta destino (solo transferencia) */}
@@ -544,41 +526,23 @@ export default function TransactionModal({
                   onClick={() => setDestOpen((o) => !o)}
                 />
                 {destOpen && (
-                  <div
-                    className="rounded-2xl border overflow-hidden"
-                    style={{
-                      background: "var(--bg-surface)",
-                      borderColor: "var(--border)",
+                  <AccountPickerSheet
+                    title="Cuenta destino"
+                    accounts={accounts
+                      .filter((acc) => acc.id !== originAccountId)
+                      .map((acc) => ({
+                        id: acc.id,
+                        name: acc.name,
+                        type: acc.type || "AHORROS",
+                        currentBalance: (acc as any).currentBalance ?? 0,
+                      }))}
+                    selectedId={form.destinationAccount}
+                    onSelect={(id) => {
+                      setForm((f) => ({ ...f, destinationAccount: id }));
+                      setDestOpen(false);
                     }}
-                  >
-                    <select
-                      value={form.destinationAccount}
-                      onChange={(e) => {
-                        setForm((f) => ({
-                          ...f,
-                          destinationAccount: e.target.value,
-                        }));
-                        setDestOpen(false);
-                      }}
-                      className="w-full text-sm px-4 py-2 outline-none"
-                      style={{
-                        background: "var(--bg-surface)",
-                        color: "var(--text-primary)",
-                      }}
-                      autoFocus
-                    >
-                      <option value="" disabled>
-                        Selecciona…
-                      </option>
-                      {accounts
-                        .filter((acc) => acc.id !== originAccountId)
-                        .map((acc) => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
+                    onClose={() => setDestOpen(false)}
+                  />
                 )}
               </>
             )}
@@ -630,25 +594,32 @@ export default function TransactionModal({
               icon={<Calendar size={18} />}
               caption="FECHA"
               value={formatDateLabel(form.date)}
-              onClick={() => {
-                setDateOpen(true);
-                setTimeout(() => dateRef.current?.showPicker?.(), 0);
-              }}
-            >
-              {/* Input nativo de fecha oculto, abre el date picker del SO */}
-              <input
-                ref={dateRef}
-                type="date"
-                value={form.date}
-                onChange={(e) => {
-                  setForm((f) => ({ ...f, date: e.target.value }));
-                  setDateOpen(false);
+              onClick={() => setDateOpen(!dateOpen)}
+            />
+            {dateOpen && (
+              <div
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 70,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(0,0,0,0.25)",
+                  backdropFilter: "blur(2px)",
                 }}
-                className="sr-only"
-                aria-hidden
-                tabIndex={-1}
-              />
-            </SheetRow>
+                onClick={(e) => { if (e.target === e.currentTarget) setDateOpen(false); }}
+              >
+                <CalendarPicker
+                  value={form.date}
+                  onChange={(iso) => {
+                    setForm((f) => ({ ...f, date: iso }));
+                    setDateOpen(false);
+                  }}
+                  onClose={() => setDateOpen(false)}
+                />
+              </div>
+            )}
           </div>
 
           {/* Error */}

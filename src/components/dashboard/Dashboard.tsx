@@ -153,23 +153,24 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
       </div>
 
       {/* ── BLOQUE 3.5: PRESUPUESTO POR CATEGORÍA ─────────────── */}
-      <div className="rounded-2xl w-full overflow-hidden border" style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "var(--border-subtle)" }}>
-          <div>
-            <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Presupuesto por categoría</h2>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Gasto del mes frente al tope de cada categoría</p>
-          </div>
+      <div className="w-full">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
+            Presupuesto
+          </h2>
           <Link
             href="/presupuesto"
-            className="flex items-center gap-1 text-xs font-semibold shrink-0"
+            className="flex items-center gap-1 text-xs font-semibold transition-colors shrink-0"
             style={{ color: "var(--info)" }}
           >
             Categorías
             <ChevronRight size={14} />
           </Link>
         </div>
-        <div className="px-6 py-5">
-          <BudgetBars items={data.budgetByCategory ?? []} />
+        <div className="rounded-2xl w-full overflow-hidden border" style={{ background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
+          <div className="px-6 py-5">
+            <BudgetBars items={data.budgetByCategory ?? []} />
+          </div>
         </div>
       </div>
 

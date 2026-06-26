@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 
 const MONTH_SHORT = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 
@@ -33,8 +33,9 @@ export default function MonthPickerPopover({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const label = new Date(selYear, selMonthIdx, 1)
-    .toLocaleDateString("es-CO", { month: "long", year: "numeric" });
+  const monthName = new Date(selYear, selMonthIdx, 1)
+    .toLocaleDateString("es-CO", { month: "long" });
+  const label = `${monthName} ${selYear}`;
 
   function select(monthIdx: number) {
     const val = `${viewYear}-${(monthIdx + 1).toString().padStart(2, "0")}`;
@@ -46,11 +47,11 @@ export default function MonthPickerPopover({
     <div className="relative z-50" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-colors shadow-sm bg-surface hover:bg-surface-2"
+        className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border transition-colors shadow-sm bg-surface hover:bg-surface-2"
         style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
       >
-        <span className="text-sm font-bold capitalize">{label}</span>
-        <ChevronDown size={14} style={{ color: "var(--text-muted)" }} />
+        <CalendarDays size={16} strokeWidth={2.2} style={{ color: "var(--success)" }} />
+        <span className="text-sm font-bold uppercase tracking-wider">{label}</span>
       </button>
 
       {open && (

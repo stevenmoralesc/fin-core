@@ -1,11 +1,41 @@
 "use client";
 
+/**
+ * src/components/modals/TransactionModal.tsx
+ * ─────────────────────────────────────────────────────────────
+ * Modal / bottom-sheet "Nuevo movimiento". Sigue el handoff
+ * design_handoff_nuevo_movimiento:
+ *   - Grabber + header + cerrar X
+ *   - Toggle Gasto / Ingreso (−/+ con knob deslizante de color)
+ *   - Monto con tipografía split (entero grande + decimal muted) y
+ *     cursor de acento
+ *   - Categoría horizontal scrolleable (discos con emoji)
+ *   - Fila Medio de pago + Fila Fecha (cards con icono · caption · valor)
+ *   - Botón Guardar negro
+ *
+ * Cuando `initialType="TRANSFERENCIA"` el modal reutiliza el mismo
+ * shell pero omite el toggle y la categoría y agrega la cuenta destino.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import { useState, useRef, useEffect } from "react";
-import { RefreshCw, X } from "lucide-react";
-import type { Account, CreditCard as CreditCardType, CategoriesByType } from "@/lib/types";
+import {
+  X,
+  CreditCard,
+  Calendar,
+  Check,
+  ChevronRight,
+  ArrowLeftRight,
+  RefreshCw,
+} from "lucide-react";
+import type {
+  Account,
+  CreditCard as CreditCardType,
+  CategoriesByType,
+} from "@/lib/types";
 import { useRouter } from "next/navigation";
 
-// ── Los iconos de categorías provienen de la base de datos (sys_config) ──
+type TxType = "INGRESO" | "GASTO" | "TRANSFERENCIA";
 
 interface ModalProps {
   accounts: Account[];
@@ -13,74 +43,159 @@ interface ModalProps {
   categories: CategoriesByType;
   onClose: () => void;
   onSuccess?: () => void;
+  /** Si es "TRANSFERENCIA", el modal arranca en modo transferencia y
+   * bloquea el toggle a Gasto/Ingreso. */
+  initialType?: TxType;
 }
 
-export default function TransactionModal({ accounts, creditCards, categories, onClose, onSuccess }: ModalProps) {
+// ─── Helpers ──────────────────────────────────────────────────
+
+const todayIso = () => {
+  const d = new Date();
+  return (
+    d.getFullYear() +
+    "-" +
+    String(d.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(d.getDate()).padStart(2, "0")
+  );
+};
+
+/** Formato visual de fecha "25 jun · Hoy". */
+function formatDateLabel(iso: string): string {
+  const date = new Date(iso + "T12:00:00");
+  const pretty = date.toLocaleDateString("es-CO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  // diff vs hoy
+  const today = new Date();
+  const sameDay =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate();
+  const yest = new Date(today);
+  yest.setDate(today.getDate() - 1);
+  const isYesterday =
+    date.getFullYear() === yest.getFullYear() &&
+    date.getMonth() === yest.getMonth() &&
+    date.getDate() === yest.getDate();
+  const suffix = sameDay ? " · Hoy" : isYesterday ? " · Ayer" : "";
+  return pretty + suffix;
+}
+
+/** Separa el monto formateado (es-CO) en entero "$1.234" y decimal ",00". */
+function splitAmount(value: string): { integer: string; decimal: string } {
+  if (!value) return { integer: "$0", decimal: ",00" };
+  const [intPart, decPart] = value.split(",");
+  return {
+    integer: "$" + intPart,
+    decimal: decPart !== undefined ? "," + (decPart || "00").padEnd(2, "0") : ",00",
+  };
+}
+
+// ─── Componente principal ─────────────────────────────────────
+
+export default function TransactionModal({
+  accounts,
+  creditCards,
+  categories,
+  onClose,
+  onSuccess,
+  initialType,
+}: ModalProps) {
   const router = useRouter();
+  const isTransferOnly = initialType === "TRANSFERENCIA";
 
   const [form, setForm] = useState({
-    type: "GASTO" as "INGRESO" | "GASTO" | "TRANSFERENCIA",
+    type: (initialType ?? "GASTO") as TxType,
     category: "",
     amount: "",
     destinationAccount: "",
-    description: "",
     paymentMethod: accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : "",
     installments: "1",
-    date: (() => {
-      const d = new Date();
-      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
-    })(),
+    date: todayIso(),
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pmOpen, setPmOpen] = useState(false);
+  const [destOpen, setDestOpen] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
 
   const amountRef = useRef<HTMLInputElement>(null);
+  const dateRef = useRef<HTMLInputElement>(null);
 
-  // auto focus amount on open
-  useEffect(() => { amountRef.current?.focus(); }, []);
+  // Auto-focus monto al abrir
+  useEffect(() => {
+    amountRef.current?.focus();
+  }, []);
 
+  // ── Derivados ──────────────────────────────────────────────
+  const isGasto = form.type === "GASTO";
+  const isIngreso = form.type === "INGRESO";
+  const accent = isIngreso ? "var(--success)" : "var(--danger)"; // gasto/transfer = rojo acento del cursor
   const categoriesForType = categories[form.type] ?? {};
   const flatCategories = Object.keys(categoriesForType);
 
-  function setType(t: "INGRESO" | "GASTO" | "TRANSFERENCIA") {
+  // Etiquetas legibles del medio de pago y cuenta destino
+  const paymentLabel = (() => {
+    if (!form.paymentMethod) return "Selecciona…";
+    const [pmType, pmId] = form.paymentMethod.split(":");
+    if (pmType === "ACCOUNT") {
+      const acc = accounts.find((a) => a.id === pmId);
+      return acc ? `${acc.name} · Débito` : "Selecciona…";
+    }
+    const cc = creditCards.find((c) => c.id === pmId);
+    return cc ? `${cc.name} · Crédito` : "Selecciona…";
+  })();
+  const destLabel = (() => {
+    if (!form.destinationAccount) return "Selecciona…";
+    const acc = accounts.find((a) => a.id === form.destinationAccount);
+    return acc ? acc.name : "Selecciona…";
+  })();
+  const originAccountId = form.paymentMethod.startsWith("ACCOUNT:")
+    ? form.paymentMethod.split(":")[1]
+    : "";
+
+  // ── Handlers ───────────────────────────────────────────────
+  function setType(t: "INGRESO" | "GASTO") {
     setForm((f) => {
+      // Si cambio a INGRESO y el medio era TC, vuelvo a la primera cuenta.
       let pm = f.paymentMethod;
       if (t !== "GASTO" && pm.startsWith("CREDIT_CARD")) {
         pm = accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : "";
       }
-      const category = t === "TRANSFERENCIA" ? "Transferencia" : "";
-      return { ...f, type: t, category, paymentMethod: pm };
+      return { ...f, type: t, category: "", paymentMethod: pm };
     });
-  }
-
-  function selectCategory(cat: string) {
-    setForm((f) => ({ ...f, category: cat }));
   }
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let raw = e.target.value.replace(/[^0-9,]/g, "");
     const parts = raw.split(",");
-    if (parts.length > 2) {
-      raw = parts[0] + "," + parts.slice(1).join("");
-    }
+    if (parts.length > 2) raw = parts[0] + "," + parts.slice(1).join("");
     const [integer, decimal] = raw.split(",");
-    let formatted = integer ? parseInt(integer, 10).toLocaleString("es-CO") : "";
-    if (raw.includes(",")) {
-      formatted += "," + (decimal || "");
-    }
+    let formatted = integer
+      ? parseInt(integer, 10).toLocaleString("es-CO")
+      : "";
+    if (raw.includes(",")) formatted += "," + (decimal || "");
     setForm((f) => ({ ...f, amount: formatted }));
   };
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.category || !form.amount) {
-      setError("Elige una categoría e ingresa el monto.");
+  async function handleSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!form.amount) {
+      setError("Ingresa el monto.");
+      return;
+    }
+    if (!isTransferOnly && !form.category) {
+      setError("Elige una categoría.");
       return;
     }
 
     const [paymentMethodType, paymentMethodId] = form.paymentMethod.split(":");
 
-    if (form.type === "TRANSFERENCIA") {
+    if (isTransferOnly) {
       if (!form.destinationAccount) {
         setError("Selecciona la cuenta destino");
         return;
@@ -99,12 +214,15 @@ export default function TransactionModal({ accounts, creditCards, categories, on
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
-          description: form.description || form.category,
+          type: form.type,
+          category: form.category,
+          description: form.category, // la categoría queda como descripción por defecto
           amount: parseFloat(form.amount.replace(/\./g, "").replace(",", ".")),
           paymentMethodId,
           paymentMethodType,
-          destinationAccountId: form.type === "TRANSFERENCIA" ? form.destinationAccount : undefined,
+          destinationAccountId: isTransferOnly
+            ? form.destinationAccount
+            : undefined,
           installments: parseInt(form.installments || "1"),
           date: form.date,
         }),
@@ -123,22 +241,8 @@ export default function TransactionModal({ accounts, creditCards, categories, on
     }
   }
 
-  const isGasto = form.type === "GASTO";
-  const isIngreso = form.type === "INGRESO";
-  const isTransferencia = form.type === "TRANSFERENCIA";
-
-  const amountColor = isGasto ? "var(--danger)" : isIngreso ? "var(--success)" : "var(--accent)";
-
-  const typeOptions: { value: "GASTO" | "INGRESO" | "TRANSFERENCIA"; label: string; color: string; fg: string }[] = [
-    { value: "GASTO", label: "Gasto", color: "var(--danger)", fg: "white" },
-    { value: "INGRESO", label: "Ingreso", color: "var(--success)", fg: "white" },
-    { value: "TRANSFERENCIA", label: "Transferencia", color: "var(--accent)", fg: "var(--accent-fg)" },
-  ];
-
-  const originAccountId = form.paymentMethod.startsWith("ACCOUNT:") ? form.paymentMethod.split(":")[1] : "";
-
-  const inputStyle = { background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-primary)" };
-  const inputBase = "w-full text-sm border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-gray-300 transition-all";
+  // ── Render: monto split ───────────────────────────────────
+  const { integer: intPart, decimal: decPart } = splitAmount(form.amount);
 
   return (
     <div
@@ -147,192 +251,506 @@ export default function TransactionModal({ accounts, creditCards, categories, on
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-[420px] rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
-        style={{ background: "var(--bg-surface)" }}
+        className="w-full sm:max-w-[392px] sm:rounded-[30px] rounded-t-[30px] overflow-hidden border"
+        style={{
+          background: "var(--bg-surface)",
+          borderColor: "var(--border-subtle)",
+          boxShadow: "0 12px 40px rgba(20,20,30,0.10)",
+          fontFamily: "var(--font-hanken), system-ui, sans-serif",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle bar (mobile) */}
-        <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-10 h-1 rounded-full" style={{ background: "var(--border)" }} />
-        </div>
+        <div className="px-[22px] pt-[14px] pb-6">
+          {/* Grabber */}
+          <div
+            className="mx-auto mb-[18px] w-10 h-1 rounded-full"
+            style={{ background: "var(--border)" }}
+          />
 
-        {/* ── Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-2 sm:pt-5">
-          <h3 className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>Nuevo movimiento</h3>
-          <button type="button" onClick={onClose} className="transition-colors p-1" style={{ color: "var(--text-muted)" }}>
-            <X size={16} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="px-5 pb-6 space-y-5">
-
-          {/* ── Tipo (segmentado) + Monto ───────────────────────── */}
-          <div className="rounded-2xl px-4 py-3 space-y-3" style={{ background: "var(--bg-surface-2)" }}>
-            {/* Control segmentado de 3 opciones */}
-            <div
-              className="grid grid-cols-3 gap-1 p-1 rounded-xl"
-              style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+          {/* Header */}
+          <div className="flex items-center justify-between mb-5">
+            <h3
+              className="text-[19px] font-bold tracking-tight"
+              style={{ color: "var(--text-primary)" }}
             >
-              {typeOptions.map((opt) => {
-                const active = form.type === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setType(opt.value)}
-                    className="text-xs font-semibold py-1.5 rounded-lg transition-all"
-                    style={active
-                      ? { background: opt.color, color: opt.fg }
-                      : { background: "transparent", color: "var(--text-muted)" }}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
+              {isTransferOnly ? "Nueva transferencia" : "Nuevo movimiento"}
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+              style={{ background: "var(--bg-surface-2)", color: "var(--text-muted)" }}
+              aria-label="Cerrar"
+            >
+              <X size={17} />
+            </button>
+          </div>
 
-            {/* Monto */}
+          {/* Switch Gasto / Ingreso (solo movimiento) */}
+          {!isTransferOnly && (
+            <div className="flex flex-col items-center gap-[7px] mb-6">
+              <div
+                className="relative w-[108px] h-10 rounded-full flex items-center p-1"
+                style={{ background: "var(--bg-surface-3)" }}
+              >
+                {/* Knob */}
+                <div
+                  className="absolute top-1 w-12 h-8 rounded-full transition-all duration-250"
+                  style={{
+                    left: isGasto ? 4 : 56,
+                    background: isGasto ? "var(--danger)" : "var(--success)",
+                    boxShadow: isGasto
+                      ? "0 3px 8px rgba(229,72,77,0.32)"
+                      : "0 3px 8px rgba(52,211,153,0.32)",
+                  }}
+                />
+                {/* Símbolos */}
+                <button
+                  type="button"
+                  onClick={() => setType("GASTO")}
+                  className="relative flex-1 flex items-center justify-center text-[22px] font-semibold leading-none"
+                  style={{ color: isGasto ? "#fff" : "var(--text-placeholder)" }}
+                  aria-label="Gasto"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setType("INGRESO")}
+                  className="relative flex-1 flex items-center justify-center text-[20px] font-semibold leading-none"
+                  style={{ color: isIngreso ? "#fff" : "var(--text-placeholder)" }}
+                  aria-label="Ingreso"
+                >
+                  +
+                </button>
+              </div>
+              <span
+                className="text-[13px] font-bold"
+                style={{
+                  color: isIngreso ? "var(--success)" : "var(--danger)",
+                  letterSpacing: "0.01em",
+                }}
+              >
+                {isIngreso ? "Ingreso" : "Gasto"}
+              </span>
+            </div>
+          )}
+
+          {/* Monto */}
+          <div className="text-center mb-6">
+            <p
+              className="text-[11px] mb-1.5"
+              style={{
+                color: "var(--text-placeholder)",
+                letterSpacing: "0.12em",
+                fontFamily: "var(--font-jetbrains), monospace",
+              }}
+            >
+              MONTO
+            </p>
+            {/* Display visual del monto (entero + decimal + cursor) */}
+            <div
+              className="relative inline-flex items-baseline justify-center font-bold tabular-nums leading-none"
+              style={{
+                letterSpacing: "-0.02em",
+                color: "var(--text-primary)",
+              }}
+              onClick={() => amountRef.current?.focus()}
+            >
+              <span style={{ fontSize: 46 }}>{intPart}</span>
+              <span style={{ fontSize: 26, color: "var(--text-placeholder)" }}>
+                {decPart}
+              </span>
+              <span
+                aria-hidden
+                className="amount-cursor"
+                style={{
+                  width: 2.5,
+                  height: 42,
+                  background: accent,
+                  borderRadius: 2,
+                  marginLeft: 4,
+                  alignSelf: "center",
+                }}
+              />
+            </div>
+            {/* Input real invisible para captura nativa */}
             <input
               ref={amountRef}
               type="text"
               inputMode="decimal"
               value={form.amount}
               onChange={handleAmountChange}
-              placeholder="0"
-              className="w-full text-3xl leading-tight font-bold bg-transparent outline-none text-center"
-              style={{ minWidth: 0, color: amountColor }}
+              aria-label="Monto"
+              className="sr-only"
+              style={{ position: "absolute", left: -9999 }}
             />
+            <style jsx>{`
+              .amount-cursor {
+                animation: amountBlink 1s steps(2, start) infinite;
+              }
+              @keyframes amountBlink {
+                to {
+                  visibility: hidden;
+                }
+              }
+            `}</style>
           </div>
 
-          {/* ── Descripción ─────────────────────────────────────── */}
-          <input
-            type="text"
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            placeholder="¿En qué? (opcional)"
-            className="w-full text-sm bg-transparent border-b pb-2 outline-none transition-colors"
-            style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
-          />
-
-          {/* ── Categorías planas ───────────────────────────────── */}
-          {!isTransferencia && (
-          <div>
-            <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Categoría</p>
-            <select
-              value={form.category}
-              onChange={(e) => selectCategory(e.target.value)}
-              className={inputBase}
-              style={inputStyle}
-              required
-            >
-              <option value="" disabled>Selecciona...</option>
+          {/* Categorías (solo movimiento) */}
+          {!isTransferOnly && (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <p
+                  className="text-[13px] font-bold"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Categoría
+                </p>
+                {flatCategories.length > 8 && (
+                  <button
+                    type="button"
+                    className="text-[13px] font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Ver todas
+                  </button>
+                )}
+              </div>
               {flatCategories.length === 0 ? (
-                <option disabled>Sin categorías para este tipo</option>
+                <p
+                  className="text-xs mb-6"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Sin categorías para este tipo. Créalas en Categorías.
+                </p>
               ) : (
-                flatCategories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {categoriesForType[cat]?.[0]?.icon || "📂"} {cat}
-                  </option>
-                ))
+                <div
+                  className="flex gap-[18px] mb-6 overflow-x-auto cats-scroll pb-1"
+                  style={{ scrollbarWidth: "none" }}
+                >
+                  {flatCategories.map((cat) => {
+                    const meta = categoriesForType[cat]?.[0];
+                    const selected = form.category === cat;
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, category: cat }))}
+                        className="flex flex-col items-center gap-[7px] shrink-0 w-14"
+                      >
+                        <div
+                          className="w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all"
+                          style={{
+                            background: selected
+                              ? "var(--text-primary)"
+                              : "var(--bg-surface-3)",
+                            boxShadow: selected
+                              ? "0 6px 14px rgba(20,20,30,0.24)"
+                              : "none",
+                          }}
+                        >
+                          <span style={{ filter: selected ? "none" : "grayscale(0)" }}>
+                            {meta?.icon || "📂"}
+                          </span>
+                        </div>
+                        <span
+                          className="text-[12px] truncate max-w-full"
+                          style={{
+                            fontWeight: selected ? 700 : 600,
+                            color: selected
+                              ? "var(--text-primary)"
+                              : "var(--text-muted)",
+                          }}
+                        >
+                          {cat}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            </select>
-          </div>
+              <style jsx>{`
+                .cats-scroll::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+            </>
           )}
 
-          {/* ── Medio de pago + Fecha ──────────────────────────── */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>{isTransferencia ? "Cuenta origen" : "Medio de pago"}</p>
-              <select
-                value={form.paymentMethod}
-                onChange={(e) => setForm((f) => ({ ...f, paymentMethod: e.target.value }))}
-                className={inputBase}
-                style={inputStyle}
+          {/* Filas: Medio de pago / Cuenta destino / Fecha */}
+          <div className="flex flex-col gap-2.5 mb-[22px]">
+            {/* Medio de pago (o "Cuenta origen" en transferencia) */}
+            <SheetRow
+              icon={<CreditCard size={18} />}
+              caption={isTransferOnly ? "CUENTA ORIGEN" : "MEDIO DE PAGO"}
+              value={paymentLabel}
+              onClick={() => setPmOpen((o) => !o)}
+            />
+            {pmOpen && (
+              <div
+                className="rounded-2xl border overflow-hidden"
+                style={{
+                  background: "var(--bg-surface)",
+                  borderColor: "var(--border)",
+                }}
               >
-                <option value="" disabled>Selecciona...</option>
-                <optgroup label="Cuentas / Efectivo">
-                  {accounts.map((acc) => (
-                    <option key={`ACCOUNT:${acc.id}`} value={`ACCOUNT:${acc.id}`}>{acc.name}</option>
-                  ))}
-                </optgroup>
-                {form.type === "GASTO" && creditCards.length > 0 && (
-                  <optgroup label="Tarjetas de Crédito">
-                    {creditCards.map((cc) => (
-                      <option key={`CREDIT_CARD:${cc.id}`} value={`CREDIT_CARD:${cc.id}`}>{cc.name}</option>
+                <select
+                  value={form.paymentMethod}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, paymentMethod: e.target.value }));
+                    setPmOpen(false);
+                  }}
+                  className="w-full text-sm px-4 py-2 outline-none"
+                  style={{
+                    background: "var(--bg-surface)",
+                    color: "var(--text-primary)",
+                  }}
+                  autoFocus
+                >
+                  <optgroup label="Cuentas / Efectivo">
+                    {accounts.map((acc) => (
+                      <option
+                        key={`ACCOUNT:${acc.id}`}
+                        value={`ACCOUNT:${acc.id}`}
+                      >
+                        {acc.name}
+                      </option>
                     ))}
                   </optgroup>
+                  {isGasto && !isTransferOnly && creditCards.length > 0 && (
+                    <optgroup label="Tarjetas de Crédito">
+                      {creditCards.map((cc) => (
+                        <option
+                          key={`CREDIT_CARD:${cc.id}`}
+                          value={`CREDIT_CARD:${cc.id}`}
+                        >
+                          {cc.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+              </div>
+            )}
+
+            {/* Cuenta destino (solo transferencia) */}
+            {isTransferOnly && (
+              <>
+                <SheetRow
+                  icon={<ArrowLeftRight size={18} />}
+                  caption="CUENTA DESTINO"
+                  value={destLabel}
+                  onClick={() => setDestOpen((o) => !o)}
+                />
+                {destOpen && (
+                  <div
+                    className="rounded-2xl border overflow-hidden"
+                    style={{
+                      background: "var(--bg-surface)",
+                      borderColor: "var(--border)",
+                    }}
+                  >
+                    <select
+                      value={form.destinationAccount}
+                      onChange={(e) => {
+                        setForm((f) => ({
+                          ...f,
+                          destinationAccount: e.target.value,
+                        }));
+                        setDestOpen(false);
+                      }}
+                      className="w-full text-sm px-4 py-2 outline-none"
+                      style={{
+                        background: "var(--bg-surface)",
+                        color: "var(--text-primary)",
+                      }}
+                      autoFocus
+                    >
+                      <option value="" disabled>
+                        Selecciona…
+                      </option>
+                      {accounts
+                        .filter((acc) => acc.id !== originAccountId)
+                        .map((acc) => (
+                          <option key={acc.id} value={acc.id}>
+                            {acc.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 )}
-              </select>
-            </div>
-            <div>
-              <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Fecha</p>
+              </>
+            )}
+
+            {/* Cuotas (solo TC) */}
+            {form.paymentMethod.startsWith("CREDIT_CARD") && !isTransferOnly && (
+              <div
+                className="flex items-center gap-3 px-[14px] py-3 rounded-[14px]"
+                style={{ background: "var(--bg-surface-2)" }}
+              >
+                <div
+                  className="w-9 h-9 rounded-[10px] flex items-center justify-center border"
+                  style={{
+                    background: "var(--bg-surface)",
+                    borderColor: "var(--border-subtle)",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  <span className="text-sm font-bold">N°</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-[10px]"
+                    style={{
+                      color: "var(--text-placeholder)",
+                      letterSpacing: "0.08em",
+                      fontFamily: "var(--font-jetbrains), monospace",
+                    }}
+                  >
+                    CUOTAS
+                  </p>
+                  <input
+                    type="number"
+                    min="1"
+                    max="36"
+                    value={form.installments}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, installments: e.target.value }))
+                    }
+                    className="text-[14.5px] font-semibold bg-transparent outline-none w-16 mt-px"
+                    style={{ color: "var(--text-primary)" }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Fecha */}
+            <SheetRow
+              icon={<Calendar size={18} />}
+              caption="FECHA"
+              value={formatDateLabel(form.date)}
+              onClick={() => {
+                setDateOpen(true);
+                setTimeout(() => dateRef.current?.showPicker?.(), 0);
+              }}
+            >
+              {/* Input nativo de fecha oculto, abre el date picker del SO */}
               <input
+                ref={dateRef}
                 type="date"
                 value={form.date}
-                onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                className={inputBase}
-                style={inputStyle}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, date: e.target.value }));
+                  setDateOpen(false);
+                }}
+                className="sr-only"
+                aria-hidden
+                tabIndex={-1}
               />
-            </div>
+            </SheetRow>
           </div>
 
-          {/* ── Cuenta destino (solo transferencia) ─────────────── */}
-          {isTransferencia && (
-            <div>
-              <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Cuenta destino</p>
-              <select
-                value={form.destinationAccount}
-                onChange={(e) => setForm((f) => ({ ...f, destinationAccount: e.target.value }))}
-                className={inputBase}
-                style={inputStyle}
-              >
-                <option value="" disabled>Selecciona...</option>
-                {accounts
-                  .filter((acc) => acc.id !== originAccountId)
-                  .map((acc) => (
-                    <option key={acc.id} value={acc.id}>{acc.name}</option>
-                  ))}
-              </select>
-            </div>
-          )}
-
-          {/* ── Cuotas (solo TC) ─────────────────────────────────── */}
-          {form.paymentMethod.startsWith("CREDIT_CARD") && (
-            <div>
-              <p className="text-[10px] leading-none font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>Número de cuotas</p>
-              <input
-                type="number"
-                min="1"
-                max="36"
-                value={form.installments}
-                onChange={(e) => setForm((f) => ({ ...f, installments: e.target.value }))}
-                className={inputBase}
-                style={inputStyle}
-              />
-            </div>
-          )}
-
-
-
-          {/* ── Error ─────────────────────────────────────────────── */}
+          {/* Error */}
           {error && (
-            <div className="text-xs rounded-lg px-3 py-2" style={{ background: "var(--danger-bg)", color: "var(--danger)", border: "1px solid var(--danger)" }}>
+            <div
+              className="text-xs rounded-lg px-3 py-2 mb-3"
+              style={{
+                background: "var(--danger-bg)",
+                color: "var(--danger)",
+                border: "1px solid var(--danger)",
+              }}
+            >
               {error}
             </div>
           )}
 
-          {/* ── Submit ────────────────────────────────────────────── */}
+          {/* Guardar */}
           <button
-            type="submit"
+            type="button"
+            onClick={() => handleSubmit()}
             disabled={loading}
-            className="w-full text-sm font-semibold py-3 rounded-xl transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
-            style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
+            className="w-full flex items-center justify-center gap-2.5 transition-opacity disabled:opacity-70"
+            style={{
+              height: 56,
+              borderRadius: 16,
+              background: "var(--text-primary)",
+              color: "var(--bg-surface)",
+              fontSize: 16,
+              fontWeight: 700,
+              boxShadow: "0 8px 20px rgba(20,20,30,0.24)",
+            }}
           >
-            {loading && <RefreshCw size={14} className="animate-spin" />}
-            {loading ? "Guardando..." : "Registrar movimiento"}
+            {loading ? (
+              <RefreshCw size={18} className="animate-spin" />
+            ) : (
+              <>
+                Guardar
+                <Check size={19} />
+              </>
+            )}
           </button>
-        </form>
+        </div>
       </div>
     </div>
+  );
+}
+
+// ─── SheetRow: fila del estilo Medio de pago / Fecha ──────────
+
+function SheetRow({
+  icon,
+  caption,
+  value,
+  onClick,
+  children,
+}: {
+  icon: React.ReactNode;
+  caption: string;
+  value: string;
+  onClick?: () => void;
+  children?: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-3 px-[14px] py-3 rounded-[14px] text-left w-full transition-colors hover:opacity-90"
+      style={{ background: "var(--bg-surface-2)" }}
+    >
+      <span
+        className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 border"
+        style={{
+          background: "var(--bg-surface)",
+          borderColor: "var(--border-subtle)",
+          color: "var(--text-secondary)",
+        }}
+      >
+        {icon}
+      </span>
+      <span className="flex-1 min-w-0">
+        <span
+          className="block text-[10px]"
+          style={{
+            color: "var(--text-placeholder)",
+            letterSpacing: "0.08em",
+            fontFamily: "var(--font-jetbrains), monospace",
+          }}
+        >
+          {caption}
+        </span>
+        <span
+          className="block text-[14.5px] font-semibold truncate mt-px"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {value}
+        </span>
+      </span>
+      <ChevronRight
+        size={18}
+        style={{ color: "var(--text-placeholder)" }}
+      />
+      {children}
+    </button>
   );
 }

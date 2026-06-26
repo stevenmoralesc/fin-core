@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, MoreHorizontal, ChevronDown, ChevronRight, TrendingUp, TrendingDown, CreditCard } from "lucide-react";
+import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, MoreHorizontal, ChevronDown, ChevronRight, TrendingUp, TrendingDown, CreditCard, ArrowLeftRight as Transfer, Plus } from "lucide-react";
 import EditCreditCardModal from "@/components/modals/EditCreditCardModal";
 import TransactionList from "@/components/ui/TransactionList";
 import TransactionModal from "@/components/modals/TransactionModal";
+import TransferModal from "@/components/modals/TransferModal";
 import BudgetBars from "@/components/budget/BudgetBars";
 import MonthPickerPopover from "@/components/ui/MonthPickerPopover";
 import SummaryCard from "@/components/ui/SummaryCard";
@@ -19,7 +20,18 @@ interface DashboardProps {
 
 export default function Dashboard({ categories, creditCards }: DashboardProps) {
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-  const [newTxModalOpen, setNewTxModalOpen] = useState(false);
+  const [newTxModalType, setNewTxModalType] = useState<"MOVIMIENTO" | "TRANSFERENCIA" | null>(null);
+  const [newMenuOpen, setNewMenuOpen] = useState(false);
+  const newMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!newMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (newMenuRef.current && !newMenuRef.current.contains(e.target as Node)) setNewMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [newMenuOpen]);
 
   const [periodo, setPeriodo] = useState<string>(() => {
     const d = new Date();
@@ -75,14 +87,46 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
         <div className="flex items-center gap-3">
           <MonthPickerPopover periodo={periodo} onChange={setPeriodo} />
         </div>
-        <button
-          onClick={() => setNewTxModalOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-          style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
-        >
-          <span className="text-base leading-none">+</span>
-          Nueva
-        </button>
+        <div className="relative" ref={newMenuRef}>
+          <button
+            onClick={() => setNewMenuOpen((o) => !o)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+            style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
+          >
+            <span className="text-base leading-none">+</span>
+            Nueva
+            <ChevronDown size={14} />
+          </button>
+          {newMenuOpen && (
+            <div
+              className="absolute top-full right-0 mt-2 py-1.5 rounded-xl border shadow-lg w-56 z-50"
+              style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
+            >
+              <button
+                type="button"
+                onClick={() => { setNewMenuOpen(false); setNewTxModalType("MOVIMIENTO"); }}
+                className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm hover:bg-surface-2 transition-colors"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--bg-surface-2)" }}>
+                  <Plus size={15} style={{ color: "var(--text-secondary)" }} />
+                </span>
+                <span className="font-medium">Nuevo movimiento</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setNewMenuOpen(false); setNewTxModalType("TRANSFERENCIA"); }}
+                className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm hover:bg-surface-2 transition-colors"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--bg-surface-2)" }}>
+                  <Transfer size={15} style={{ color: "var(--text-secondary)" }} />
+                </span>
+                <span className="font-medium">Transferencia</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── BLOQUE 3: RESUMEN (INGRESOS / GASTOS) ─────────────── */}
@@ -174,12 +218,19 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
           onSuccess={refresh}
         />
       )}
-      {newTxModalOpen && (
+      {newTxModalType === "MOVIMIENTO" && (
         <TransactionModal
           accounts={data?.cuentasActivas || []}
           creditCards={creditCards}
           categories={categories}
-          onClose={() => setNewTxModalOpen(false)}
+          onClose={() => setNewTxModalType(null)}
+          onSuccess={refresh}
+        />
+      )}
+      {newTxModalType === "TRANSFERENCIA" && (
+        <TransferModal
+          accounts={data?.cuentasActivas || []}
+          onClose={() => setNewTxModalType(null)}
           onSuccess={refresh}
         />
       )}

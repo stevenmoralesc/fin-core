@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Wallet, ShoppingCart, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, MoreHorizontal, ChevronDown, ChevronRight, TrendingUp, TrendingDown, CreditCard, ArrowLeftRight as Transfer, Plus } from "lucide-react";
 import EditCreditCardModal from "@/components/modals/EditCreditCardModal";
+import EditTransactionModal from "@/components/modals/EditTransactionModal";
 import TransactionList from "@/components/ui/TransactionList";
 import TransactionModal from "@/components/modals/TransactionModal";
 import TransferModal from "@/components/modals/TransferModal";

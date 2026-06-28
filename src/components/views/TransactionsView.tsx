@@ -63,8 +63,8 @@ export default function TransactionsView({ transactions, categories }: Transacti
           <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Movimientos</h1>
           <MonthPickerPopover periodo={periodo} onChange={setPeriodo} />
         </div>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          {filtered.length} {filtered.length === 1 ? "movimiento registrado" : "movimientos registrados"}
+        <p className="text-sm mt-2 mb-2" style={{ color: "var(--text-muted)" }}>
+          {filtered.length} {filtered.length === 1 ? "movimiento" : "movimientos"}
         </p>
       </div>
 

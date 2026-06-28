@@ -20,8 +20,9 @@ import { useState, useRef, useEffect } from "react";
 import {
   X,
   CreditCard,
-  PiggyBank,
   Banknote,
+  Landmark,
+  Briefcase,
   ArrowLeftRight,
   Calendar,
   ChevronRight,
@@ -88,11 +89,11 @@ function formatDateLabel(iso: string): string {
   return pretty + suffix;
 }
 
-/** Icono por tipo de cuenta (estimado). */
 function AccountIcon({ type, size = 17 }: { type: string; size?: number }) {
-  if (type === "AHORROS") return <PiggyBank size={size} />;
   if (type === "EFECTIVO") return <Banknote size={size} />;
-  return <CreditCard size={size} />; // CORRIENTE u otros
+  if (type === "Crédito" || type === "TARJETA") return <CreditCard size={size} />;
+  if (type === "CORRIENTE") return <Briefcase size={size} />;
+  return <Landmark size={size} />; // Ahorros y fallback
 }
 
 /** Etiqueta de cuenta visible: "Nombre · Tipo". */
@@ -110,11 +111,11 @@ function accountLabel(a: AccountWithBalance): string {
 
 /** Separa el monto formateado en entero y decimal. */
 function splitAmount(value: string): { integer: string; decimal: string } {
-  if (!value) return { integer: "$0", decimal: ",00" };
+  if (!value) return { integer: "$0", decimal: "" };
   const [intPart, decPart] = value.split(",");
   return {
     integer: "$" + intPart,
-    decimal: decPart !== undefined ? "," + (decPart || "00").padEnd(2, "0") : ",00",
+    decimal: decPart !== undefined ? "," + decPart : "",
   };
 }
 
@@ -396,9 +397,6 @@ export default function TransferModal({ accounts, onClose, onSuccess }: Props) {
               onClick={() => amountRef.current?.focus()}
             >
               <span style={{ fontSize: 44 }}>{intPart}</span>
-              <span style={{ fontSize: 25, color: "var(--text-placeholder)" }}>
-                {decPart}
-              </span>
               <span
                 aria-hidden
                 className="amount-cursor"
@@ -408,9 +406,13 @@ export default function TransferModal({ accounts, onClose, onSuccess }: Props) {
                   background: INDIGO,
                   borderRadius: 2,
                   marginLeft: 4,
+                  marginRight: 4,
                   alignSelf: "center",
                 }}
               />
+              <span style={{ fontSize: 25, color: "var(--text-placeholder)" }}>
+                {decPart}
+              </span>
             </div>
             <input
               ref={amountRef}

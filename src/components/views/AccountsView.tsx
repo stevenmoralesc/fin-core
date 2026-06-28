@@ -5,24 +5,22 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
-  ArrowUpRight,
-  ArrowDownLeft,
   Plus,
   ChevronRight,
   Banknote,
-  Building2,
-  CreditCard,
+  CreditCard as CreditCardIcon,
   Settings,
+  Landmark,
+  Briefcase
 } from "lucide-react";
 import type { AccountWithStats } from "@/app/cuentas/page";
 import { useRouter } from "next/navigation";
 import AddAccountModal from "@/components/modals/AddAccountModal";
 import EditAccountModal from "@/components/modals/EditAccountModal";
 import { formatCents, formatCentsParts } from "@/lib/money";
-import { relativeDate } from "@/lib/format";
 import type { CategoriesByType } from "@/lib/types";
 
-// ── Helpers (los montos llegan en centavos enteros) ───────────
+// ── Helpers ───────────
 import TransactionList from "@/components/ui/TransactionList";
 function formatCOP(v: number) {
   return formatCents(v);
@@ -31,21 +29,46 @@ function formatCOPShort(v: number) {
   return formatCOP(v);
 }
 
-function accountIcon(type: string) {
-  switch (type) {
-    case "EFECTIVO": return <Banknote size={20} className="text-success" />;
-    case "AHORROS":  return <Building2 size={20} className="text-info" />;
-    case "CORRIENTE": return <CreditCard size={20} className="text-warning" />;
-    default: return <Wallet size={20} className="text-muted" />;
-  }
+const INDIGO = "#3b5bda";
+
+interface AvatarMeta {
+  bg: string;
+  fg: string;
+  text?: string;
+  icon?: React.ReactNode;
 }
-function accountBg(type: string) {
-  switch (type) {
-    case "EFECTIVO": return "bg-success-soft";
-    case "AHORROS":  return "bg-info-soft";
-    case "CORRIENTE": return "bg-warning-soft";
-    default: return "bg-surface-2";
+
+function getIconForType(type: string) {
+  if (type === "EFECTIVO") return <Banknote size={20} />;
+  if (type === "Crédito" || type === "TARJETA") return <CreditCardIcon size={20} />;
+  if (type === "CORRIENTE") return <Briefcase size={20} />;
+  return <Landmark size={20} />; // Ahorros y fallback
+}
+
+function avatarMeta(name: string, type: string): AvatarMeta {
+  const n = name.toLowerCase();
+  const icon = getIconForType(type);
+
+  if (n.includes("inversión") || n.includes("inversion")) {
+    return { bg: "#eaeef9", fg: INDIGO, icon: <TrendingUp size={20} /> };
   }
+  if (n.includes("efectivo") || type === "EFECTIVO") {
+    return { bg: "#e6f4ea", fg: "#1f7a4d", icon: <Banknote size={20} /> };
+  }
+  if (n.startsWith("arq")) return { bg: "#e7eafc", fg: "#14182a", icon };
+  if (n.includes("davibank") || n.includes("daviplata"))
+    return { bg: "#fbe9e9", fg: "#c0392b", icon };
+  if (n.includes("nequi")) return { bg: "#efe7fb", fg: "#7b3fe4", icon };
+  if (n.includes("pibank")) return { bg: "#e3f4f1", fg: "#138a72", icon };
+  if (n.startsWith("rappicuenta j") || n.startsWith("rappicard j"))
+    return { bg: "#ffeede", fg: "#e8590c", icon };
+  if (n.startsWith("rappi"))
+    return { bg: "#ffeede", fg: "#e8590c", icon };
+  if (n.startsWith("soles")) return { bg: "#fbf0dd", fg: "#b9821a", icon };
+  if (n.startsWith("bancolombia"))
+    return { bg: "#e9f0fb", fg: "#1d63b8", icon };
+
+  return { bg: "var(--bg-surface-3)", fg: "var(--text-secondary)", icon };
 }
 
 interface AccountsViewProps {
@@ -64,220 +87,233 @@ export default function AccountsView({ initialAccounts, categories }: AccountsVi
 
   return (
     <>
-      <div className="space-y-6">
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>Mis Cuentas</h1>
-            <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+      <div className="space-y-8 md:space-y-12">
+        {/* ── Header Exaggerated Minimalism ── */}
+        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tighter" style={{ color: "var(--text-primary)" }}>
+              Mis Cuentas
+            </h1>
+            <p className="text-lg md:text-xl font-medium tracking-tight" style={{ color: "var(--text-muted)" }}>
               Liquidez total:{" "}
-              <span className={`font-bold ${totalLiquidez >= 0 ? "text-success" : "text-danger"}`}>
+              <span className={`font-bold ${totalLiquidez >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                 {formatCOPShort(totalLiquidez)}
               </span>
             </p>
           </div>
           <button
             onClick={() => setAddModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
-            style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
+            className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-[16px] text-[15px] font-bold transition-all hover:scale-[1.02] shadow-sm shrink-0"
+            style={{ background: "var(--text-primary)", color: "var(--bg-surface)" }}
           >
-            <Plus size={16} />
+            <Plus size={18} strokeWidth={2.5} />
             Nueva Cuenta
           </button>
         </div>
 
         {/* ── Grid de Cuentas + Detalle ── */}
         {initialAccounts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center border rounded-2xl shadow-sm" style={{ borderColor: "var(--border)", background: "var(--bg-surface)" }}>
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: "var(--bg-surface-2)" }}>
-              <span className="text-3xl">🏦</span>
+          <div className="flex flex-col items-center justify-center py-32 text-center rounded-[32px] border shadow-sm" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }}>
+            <div className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-6" style={{ background: "var(--bg-surface-2)", color: "var(--text-muted)" }}>
+              <Landmark size={40} strokeWidth={1.5} />
             </div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>No hay cuentas registradas</h2>
-            <p className="text-sm max-w-sm mb-6" style={{ color: "var(--text-muted)" }}>
-              Aún no tienes cuentas registradas. Agrega tu primera cuenta para empezar a trackear tu liquidez.
+            <h2 className="text-2xl font-bold mb-3 tracking-tight" style={{ color: "var(--text-primary)" }}>No hay cuentas registradas</h2>
+            <p className="text-base max-w-sm mb-8 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              Aún no tienes cuentas registradas. Agrega tu primera cuenta para empezar a trackear tu liquidez de forma centralizada.
             </p>
             <button
               onClick={() => setAddModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm"
-              style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
+              className="flex items-center gap-2 px-6 py-3.5 rounded-[16px] text-[15px] font-bold transition-all shadow-sm"
+              style={{ background: "var(--text-primary)", color: "var(--bg-surface)" }}
             >
-              <Plus size={18} />
+              <Plus size={18} strokeWidth={2.5} />
               Agregar primera cuenta
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-          {/* Lista lateral de cuentas */}
-          <div className="space-y-3">
-            {initialAccounts.map((acc) => {
-              const isSelected = acc.id === selected;
-              return (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+            
+            {/* ── Lista lateral de cuentas ── */}
+            <div className="space-y-3">
+              <h3 className="text-[13px] font-bold tracking-widest uppercase mb-4" style={{ color: "var(--text-muted)" }}>
+                Cuentas activas
+              </h3>
+              {initialAccounts.map((acc) => {
+                const isSelected = acc.id === selected;
+                const meta = avatarMeta(acc.name, acc.type);
+                return (
                   <button
-                  key={acc.id}
-                  onClick={() => setSelected(acc.id)}
-                  className="w-full text-left p-4 rounded-2xl border transition-all duration-150"
-                  style={isSelected
-                    ? { background: "var(--bg-surface-3)", borderColor: "var(--border)", color: "var(--text-primary)", boxShadow: "var(--shadow-lg)" }
-                    : { background: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }
-                  }
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isSelected ? "bg-black/10 dark:bg-surface/10" : accountBg(acc.type)}`}>
-                      {accountIcon(acc.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>
-                          {acc.name}
-                        </p>
-                        <ChevronRight size={14} style={{ color: isSelected ? "var(--text-primary)" : "var(--text-placeholder)" }} />
+                    key={acc.id}
+                    onClick={() => setSelected(acc.id)}
+                    className="w-full text-left p-[18px] rounded-[24px] border transition-all duration-200 group"
+                    style={isSelected
+                      ? { 
+                          background: "var(--bg-surface-2)", 
+                          borderColor: "var(--border)", 
+                          boxShadow: "0 8px 30px rgba(0,0,0,0.04)"
+                        }
+                      : { 
+                          background: "transparent", 
+                          borderColor: "transparent",
+                        }
+                    }
+                  >
+                    <div className="flex items-center gap-4">
+                      <div 
+                        className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105"
+                        style={{ background: meta.bg, color: meta.fg }}
+                      >
+                        {meta.icon}
                       </div>
-                      <p className="text-[11px] font-medium uppercase tracking-widest mt-0.5" style={{ color: "var(--text-muted)" }}>
-                        {acc.type}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[16px] font-bold truncate" style={{ color: "var(--text-primary)" }}>
+                            {acc.name}
+                          </p>
+                          <ChevronRight 
+                            size={16} 
+                            style={{ 
+                              color: isSelected ? "var(--text-primary)" : "var(--text-placeholder)",
+                              transform: isSelected ? "translateX(2px)" : "none",
+                              transition: "transform 0.2s"
+                            }} 
+                          />
+                        </div>
+                        <p className="text-[12px] font-semibold mt-0.5" style={{ color: "var(--text-muted)" }}>
+                          {acc.type === "AHORROS" ? "Ahorros" : acc.type === "EFECTIVO" ? "Efectivo" : acc.type === "CORRIENTE" ? "Corriente" : acc.type}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t" style={{ borderColor: isSelected ? "var(--border-subtle)" : "transparent" }}>
+                      <p className="text-[22px] font-extrabold tabular-nums tracking-tight" style={{ color: acc.currentBalance < 0 ? "#ef4444" : "var(--text-primary)" }}>
+                        {(() => {
+                          const { integer, decimal } = formatCentsParts(acc.currentBalance);
+                          return (
+                            <>
+                              {integer}
+                              <span style={{ fontSize: "14px", color: "var(--text-placeholder)", marginLeft: "2px" }}>{decimal}</span>
+                            </>
+                          );
+                        })()}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── Panel de detalle ── */}
+            {selectedAccount && (
+              <div className="lg:col-span-2 space-y-6">
+                
+                {/* Header de la cuenta seleccionada */}
+                <div 
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-[32px] border shadow-sm backdrop-blur-md"
+                  style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
+                >
+                  <div className="flex items-center gap-5">
+                    {(() => {
+                      const meta = avatarMeta(selectedAccount.name, selectedAccount.type);
+                      return (
+                        <div 
+                          className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 shadow-sm"
+                          style={{ background: meta.bg, color: meta.fg }}
+                        >
+                          {meta.icon}
+                        </div>
+                      );
+                    })()}
+                    <div>
+                      <h2 className="text-2xl font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>
+                        {selectedAccount.name}
+                      </h2>
+                      <p className="text-[13px] font-medium mt-1" style={{ color: "var(--text-muted)" }}>
+                        {selectedAccount.type} · Moneda: {selectedAccount.currency}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5">
-                    <p className="text-xl font-bold tabular-nums" style={{ color: acc.currentBalance < 0 ? "var(--danger)" : "var(--text-primary)" }}>
-                      {(() => {
-                        const { integer, decimal } = formatCentsParts(acc.currentBalance);
-                        return (
-                          <>
-                            {integer}
-                            <span style={{ fontSize: "0.65em", opacity: 0.5 }}>{decimal}</span>
-                          </>
-                        );
-                      })()}
-                    </p>
-                    <div className="flex gap-3 mt-1 text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
-                      <span className="flex items-center gap-0.5">
-                        <TrendingUp size={10} style={{ color: "var(--success)" }} />
-                        {formatCOPShort(acc.totalIngresos)}
-                      </span>
-                      <span className="flex items-center gap-0.5">
-                        <TrendingDown size={10} style={{ color: "var(--danger)" }} />
-                        {formatCOPShort(acc.totalGastos)}
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Panel de detalle */}
-          {selectedAccount && (
-            <div className="lg:col-span-2 space-y-4">
-              {/* Header de la cuenta seleccionada */}
-              <div className="flex items-center justify-between rounded-2xl border p-4 shadow-sm" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
-                <div>
-                  <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{selectedAccount.name}</h2>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{selectedAccount.type} · Moneda: {selectedAccount.currency}</p>
+                  <button
+                    onClick={() => setEditModalOpen(true)}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-[14px] text-[13px] font-bold transition-colors border shadow-sm"
+                    style={{ background: "var(--bg-surface-2)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
+                  >
+                    <Settings size={15} strokeWidth={2.5} style={{ color: "var(--text-muted)" }} />
+                    Ajustes
+                  </button>
                 </div>
-                <button
-                  onClick={() => setEditModalOpen(true)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-colors border shadow-sm bg-surface-2 hover:bg-surface-3"
-                  style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
-                >
-                  <Settings size={16} style={{ color: "var(--text-muted)" }} />
-                  Editar
-                </button>
-              </div>
 
-              {/* KPIs de la cuenta */}
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  {
-                    label: "Saldo Actual",
-                    cents: selectedAccount.currentBalance,
-                    sub: "Balance disponible",
-                    color: selectedAccount.currentBalance >= 0 ? "text-success" : "text-danger",
-                    bg: "bg-success-soft",
-                    icon: <Wallet size={18} className={selectedAccount.currentBalance >= 0 ? "text-success" : "text-danger"} />,
-                  },
-                  {
-                    label: "Total Ingresos",
-                    cents: selectedAccount.totalIngresos,
-                    sub: "Acumulado histórico",
-                    color: "text-info",
-                    bg: "bg-info-soft",
-                    icon: <TrendingUp size={18} className="text-info" />,
-                  },
-                  {
-                    label: "Total Gastos",
-                    cents: selectedAccount.totalGastos,
-                    sub: "Acumulado histórico",
-                    color: "text-danger",
-                    bg: "bg-danger-soft",
-                    icon: <TrendingDown size={18} className="text-danger" />,
-                  },
-                ].map((kpi) => (
-                  <div key={kpi.label} className="rounded-2xl border p-4 shadow-sm" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
-                    <div className={`w-9 h-9 rounded-xl ${kpi.bg} flex items-center justify-center mb-3`}>
-                      {kpi.icon}
+                {/* KPIs de la cuenta (Bento Box style) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[
+                    {
+                      label: "Saldo Actual",
+                      cents: selectedAccount.currentBalance,
+                      color: selectedAccount.currentBalance >= 0 ? "var(--text-primary)" : "#ef4444",
+                    },
+                    {
+                      label: "Ingresos (Histórico)",
+                      cents: selectedAccount.totalIngresos,
+                      color: "var(--text-primary)",
+                    },
+                    {
+                      label: "Gastos (Histórico)",
+                      cents: selectedAccount.totalGastos,
+                      color: "var(--text-primary)",
+                    },
+                  ].map((kpi, i) => (
+                    <div 
+                      key={kpi.label} 
+                      className="p-5 rounded-[24px] border shadow-sm flex flex-col justify-between"
+                      style={{ 
+                        background: i === 0 ? "var(--bg-surface-2)" : "var(--bg-surface)", 
+                        borderColor: i === 0 ? "var(--border)" : "var(--border-subtle)",
+                        minHeight: "120px"
+                      }}
+                    >
+                      <p className="text-[12px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+                        {kpi.label}
+                      </p>
+                      <p className="text-2xl font-extrabold mt-3 tabular-nums tracking-tight" style={{ color: kpi.color }}>
+                        {(() => {
+                          const { integer, decimal } = formatCentsParts(kpi.cents);
+                          return (
+                            <>
+                              {integer}
+                              <span style={{ fontSize: "14px", color: "var(--text-placeholder)", marginLeft: "2px" }}>{decimal}</span>
+                            </>
+                          );
+                        })()}
+                      </p>
                     </div>
-                    <p className="text-[10px] leading-none font-bold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{kpi.label}</p>
-                    <p className={`text-base font-bold mt-1 tabular-nums ${kpi.color}`}>
-                      {(() => {
-                        const { integer, decimal } = formatCentsParts(kpi.cents);
-                        return (
-                          <>
-                            {integer}
-                            <span style={{ fontSize: "0.65em", opacity: 0.5 }}>{decimal}</span>
-                          </>
-                        );
-                      })()}
-                    </p>
-                    <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{kpi.sub}</p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              {/* Movimientos recientes */}
-              <div className="rounded-2xl border overflow-hidden shadow-sm" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
-                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border-subtle)" }}>
-                  <div>
-                    <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Últimos Movimientos</h3>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      {selectedAccount.name} · {selectedAccount.currency}
-                    </p>
+                {/* Movimientos recientes */}
+                <div className="rounded-[32px] border overflow-hidden shadow-sm" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+                  <div className="flex items-center justify-between px-7 py-6 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+                    <div>
+                      <h3 className="text-lg font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>Últimos Movimientos</h3>
+                    </div>
                   </div>
-                  {selectedAccount.recentTransactions.length === 0 && (
-                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>Sin movimientos aún</span>
+
+                  {selectedAccount.recentTransactions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: "var(--bg-surface-2)", color: "var(--text-muted)" }}>
+                        <Wallet size={24} strokeWidth={1.5} />
+                      </div>
+                      <p className="text-[15px] font-bold" style={{ color: "var(--text-primary)" }}>Sin transacciones</p>
+                      <p className="text-[13px] mt-1" style={{ color: "var(--text-muted)" }}>Aún no hay actividad registrada en esta cuenta.</p>
+                    </div>
+                  ) : (
+                    <div className="p-2">
+                      <TransactionList transactions={selectedAccount.recentTransactions} categories={categories} />
+                    </div>
                   )}
                 </div>
-
-                {selectedAccount.recentTransactions.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-14 text-center">
-                    <div className="w-12 h-12 rounded-2xl bg-surface-2 flex items-center justify-center mb-3">
-                      <Wallet size={20} className="text-placeholder" />
-                    </div>
-                    <p className="text-sm font-medium text-muted">Sin transacciones en esta cuenta</p>
-                    <p className="text-xs text-placeholder mt-1">Usa esta cuenta en una nueva transacción</p>
-                  </div>
-                ) : (
-                  <div className="pt-2">
-                    <TransactionList transactions={selectedAccount.recentTransactions} categories={categories} />
-                  </div>
-                )}
               </div>
-
-              {/* Saldo inicial */}
-              <div className="rounded-2xl px-5 py-4 flex items-center justify-between border" style={{ background: "var(--bg-surface-2)", borderColor: "var(--border-subtle)" }}>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Saldo Inicial</p>
-                  <p className="text-sm font-semibold mt-0.5" style={{ color: "var(--text-primary)" }}>
-                    Al abrir la cuenta
-                  </p>
-                </div>
-                <p className="text-base font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
-                  {formatCOP(selectedAccount.initialBalance)}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         )}
       </div>
 

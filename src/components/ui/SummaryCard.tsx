@@ -38,10 +38,14 @@ export default function SummaryCard({
   const PillIcon = pill?.icon;
   return (
     <div
-      className="p-6 rounded-3xl border flex flex-col"
+      className="p-6 rounded-3xl border flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
       style={{
         background: "var(--bg-surface)",
-        borderColor: "var(--border)",
+        borderRightColor: "var(--border)",
+        borderBottomColor: "var(--border)",
+        borderLeftColor: "var(--border)",
+        borderTopWidth: "3px",
+        borderTopColor: color,
         boxShadow: "var(--shadow-sm)",
       }}
     >

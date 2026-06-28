@@ -78,18 +78,6 @@ export default function CalendarPicker({ value, onChange, onClose }: CalendarPic
     onClose();
   }
 
-  function selectToday() {
-    const now = new Date();
-    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    onChange(iso);
-    onClose();
-  }
-
-  function clearDate() {
-    onChange(selectTodayIso());
-    onClose();
-  }
-
   const isSelectedDay = (day: number, isCurrent: boolean) => {
     return isCurrent && viewYear === parsed.year && viewMonth === parsed.month && day === parsed.day;
   };
@@ -210,30 +198,6 @@ export default function CalendarPicker({ value, onChange, onClose }: CalendarPic
           );
         })}
       </div>
-
-      {/* Footer: Borrar / Hoy */}
-      <div style={{ height: 1, background: "#f0efe9", margin: "14px 0 12px" }} />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <button
-          type="button"
-          onClick={clearDate}
-          style={{ fontSize: "14.5px", fontWeight: 600, color: "#8a8a92", background: "none", border: "none", cursor: "pointer" }}
-        >
-          Borrar
-        </button>
-        <button
-          type="button"
-          onClick={selectToday}
-          style={{ fontSize: "14.5px", fontWeight: 700, color: "#3b5bda", background: "none", border: "none", cursor: "pointer" }}
-        >
-          Hoy
-        </button>
-      </div>
     </div>
   );
-}
-
-function selectTodayIso() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }

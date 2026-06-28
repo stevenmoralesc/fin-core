@@ -35,7 +35,9 @@ export interface Transaction {
   amount: number;
   description: string | null;
   accountId: string | null;
+  destinationAccountId?: string | null;
   debtReferenceId: string | null;
+  creditCardId?: string | null;
   paymentMethodName?: string | null;  // joined from account or credit card name
   createdAt: string;
   updatedAt: string;
@@ -87,7 +89,7 @@ export interface DashboardSummary {
   pagoTcPendiente: number;
   recentTransactions: Transaction[];
   periodTransactionsCount: number;
-  cuentasActivas: Account[];
+  cuentasActivas: (Account & { currentBalance: number })[];
   budgetByCategory: BudgetByCategory[];
 }
 

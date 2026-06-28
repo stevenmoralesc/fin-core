@@ -13,7 +13,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-import { X, Banknote, TrendingUp, Check } from "lucide-react";
+import { X, Banknote, TrendingUp, Check, Landmark, CreditCard, Briefcase } from "lucide-react";
 import { formatCentsParts } from "@/lib/money";
 
 interface AccountLike {
@@ -34,6 +34,13 @@ interface AvatarMeta {
   icon?: React.ReactNode;
 }
 
+function getIconForType(type: string) {
+  if (type === "EFECTIVO") return <Banknote size={20} />;
+  if (type === "Crédito" || type === "TARJETA") return <CreditCard size={20} />;
+  if (type === "CORRIENTE") return <Briefcase size={20} />;
+  return <Landmark size={20} />; // Ahorros y fallback
+}
+
 /**
  * Paleta por banco según el handoff. La detección es por substring
  * en el nombre (case-insensitive). Si no hay match, usa un fallback
@@ -41,8 +48,9 @@ interface AvatarMeta {
  */
 function avatarMeta(name: string, type: string): AvatarMeta {
   const n = name.toLowerCase();
+  const icon = getIconForType(type);
 
-  // Especiales (icono en lugar de inicial)
+  // Especiales
   if (n.includes("inversión") || n.includes("inversion")) {
     return { bg: "#eaeef9", fg: INDIGO, icon: <TrendingUp size={20} /> };
   }
@@ -50,23 +58,22 @@ function avatarMeta(name: string, type: string): AvatarMeta {
     return { bg: "#e6f4ea", fg: "#1f7a4d", icon: <Banknote size={20} /> };
   }
 
-  // Bancos conocidos
-  if (n.startsWith("arq")) return { bg: "#e7eafc", fg: "#14182a", text: "A" };
+  // Bancos conocidos (mantenemos los colores de fondo, pero usamos el icono)
+  if (n.startsWith("arq")) return { bg: "#e7eafc", fg: "#14182a", icon };
   if (n.includes("davibank") || n.includes("daviplata"))
-    return { bg: "#fbe9e9", fg: "#c0392b", text: "D" };
-  if (n.includes("nequi")) return { bg: "#efe7fb", fg: "#7b3fe4", text: "N" };
-  if (n.includes("pibank")) return { bg: "#e3f4f1", fg: "#138a72", text: "P" };
+    return { bg: "#fbe9e9", fg: "#c0392b", icon };
+  if (n.includes("nequi")) return { bg: "#efe7fb", fg: "#7b3fe4", icon };
+  if (n.includes("pibank")) return { bg: "#e3f4f1", fg: "#138a72", icon };
   if (n.startsWith("rappicuenta j") || n.startsWith("rappicard j"))
-    return { bg: "#ffeede", fg: "#e8590c", text: "RJ" };
+    return { bg: "#ffeede", fg: "#e8590c", icon };
   if (n.startsWith("rappi"))
-    return { bg: "#ffeede", fg: "#e8590c", text: "R" };
-  if (n.startsWith("soles")) return { bg: "#fbf0dd", fg: "#b9821a", text: "S" };
+    return { bg: "#ffeede", fg: "#e8590c", icon };
+  if (n.startsWith("soles")) return { bg: "#fbf0dd", fg: "#b9821a", icon };
   if (n.startsWith("bancolombia"))
-    return { bg: "#e9f0fb", fg: "#1d63b8", text: "B" };
+    return { bg: "#e9f0fb", fg: "#1d63b8", icon };
 
   // Fallback genérico
-  const initial = name.trim().charAt(0).toUpperCase() || "•";
-  return { bg: "var(--bg-surface-3)", fg: "var(--text-secondary)", text: initial };
+  return { bg: "var(--bg-surface-3)", fg: "var(--text-secondary)", icon };
 }
 
 function typeLabel(type: string): string {

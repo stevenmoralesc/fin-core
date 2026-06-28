@@ -95,11 +95,8 @@ export default function MonthPickerPopover({
             <button
               type="button"
               onClick={() => setViewYear(viewYear - 1)}
-              style={{
-                width: 34, height: 34, borderRadius: 10,
-                background: "#f4f4f2", display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#5a5a62", border: "none", cursor: "pointer",
-              }}
+              className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center text-[#5a5a62] hover:bg-[#f4f4f2] transition-colors"
+              style={{ border: "none", cursor: "pointer", background: "transparent" }}
             >
               <ChevronLeft size={18} />
             </button>
@@ -132,11 +129,8 @@ export default function MonthPickerPopover({
             <button
               type="button"
               onClick={() => setViewYear(viewYear + 1)}
-              style={{
-                width: 34, height: 34, borderRadius: 10,
-                background: "#f4f4f2", display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#5a5a62", border: "none", cursor: "pointer",
-              }}
+              className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center text-[#5a5a62] hover:bg-[#f4f4f2] transition-colors"
+              style={{ border: "none", cursor: "pointer", background: "transparent" }}
             >
               <ChevronRight size={18} />
             </button>

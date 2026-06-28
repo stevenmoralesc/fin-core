@@ -46,7 +46,7 @@ export default function TransactionList({
   mode = "grouped",
   showRelativeDate = false,
 }: {
-  transactions: Transaction[];
+  transactions: any[];
   categories?: CategoriesByType;
   /** `grouped` (default) agrupa por día con encabezado de fecha; `flat` lista
    * todo en una sola tarjeta sin encabezados (uso típico: recientes en el resumen). */
@@ -55,7 +55,7 @@ export default function TransactionList({
   showRelativeDate?: boolean;
 }) {
   const router = useRouter();
-  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [editingTx, setEditingTx] = useState<any | null>(null);
 
   const groups = useMemo(() => {
     if (mode === "flat") return [];

@@ -27,6 +27,7 @@ import {
   ChevronRight,
   ArrowLeftRight,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import CalendarPicker from "@/components/ui/CalendarPicker";
 import type {
@@ -48,6 +49,8 @@ interface ModalProps {
   /** Si es "TRANSFERENCIA", el modal arranca en modo transferencia y
    * bloquea el toggle a Gasto/Ingreso. */
   initialType?: TxType;
+  /** Si se pasa una transacción, el modal funciona en modo Edición */
+  transaction?: any;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -89,11 +92,11 @@ function formatDateLabel(iso: string): string {
 
 /** Separa el monto formateado (es-CO) en entero "$1.234" y decimal ",00". */
 function splitAmount(value: string): { integer: string; decimal: string } {
-  if (!value) return { integer: "$0", decimal: ",00" };
+  if (!value) return { integer: "$0", decimal: "" };
   const [intPart, decPart] = value.split(",");
   return {
     integer: "$" + intPart,
-    decimal: decPart !== undefined ? "," + (decPart || "00").padEnd(2, "0") : ",00",
+    decimal: decPart !== undefined ? "," + decPart : "",
   };
 }
 
@@ -106,18 +109,40 @@ export default function TransactionModal({
   onClose,
   onSuccess,
   initialType,
+  transaction,
 }: ModalProps) {
   const router = useRouter();
-  const isTransferOnly = initialType === "TRANSFERENCIA";
+  const isTransferOnly = initialType === "TRANSFERENCIA" || transaction?.type === "TRANSFERENCIA";
 
-  const [form, setForm] = useState({
-    type: (initialType ?? "GASTO") as TxType,
-    category: "",
-    amount: "",
-    destinationAccount: "",
-    paymentMethod: accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : "",
-    installments: "1",
-    date: todayIso(),
+  const [form, setForm] = useState(() => {
+    if (transaction) {
+      const absValue = Math.abs(transaction.amount / 100);
+      const [int, dec] = String(absValue).split(".");
+      let formatted = parseInt(int, 10).toLocaleString("es-CO");
+      if (dec !== undefined) formatted += "," + dec;
+      return {
+        type: transaction.type as TxType,
+        category: transaction.category,
+        amount: formatted,
+        destinationAccount: transaction.destinationAccountId || "",
+        paymentMethod: transaction.creditCardId
+          ? `CREDIT_CARD:${transaction.creditCardId}`
+          : transaction.accountId
+          ? `ACCOUNT:${transaction.accountId}`
+          : (accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : ""),
+        installments: String(transaction.installments || 1),
+        date: transaction.date.split("T")[0],
+      };
+    }
+    return {
+      type: (initialType ?? "GASTO") as TxType,
+      category: "",
+      amount: "",
+      destinationAccount: "",
+      paymentMethod: accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : "",
+      installments: "1",
+      date: todayIso(),
+    };
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -211,8 +236,10 @@ export default function TransactionModal({
     setError("");
 
     try {
-      const res = await fetch("/api/transactions", {
-        method: "POST",
+      const url = transaction ? `/api/transactions/${transaction.id}` : "/api/transactions";
+      const method = transaction ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: form.type,
@@ -238,6 +265,20 @@ export default function TransactionModal({
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al guardar");
     } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!transaction) return;
+    setLoading(true);
+    try {
+      await fetch(`/api/transactions/${transaction.id}`, { method: "DELETE" });
+      router.refresh();
+      onSuccess?.();
+      onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al eliminar");
       setLoading(false);
     }
   }
@@ -274,7 +315,9 @@ export default function TransactionModal({
               className="text-[19px] font-bold tracking-tight"
               style={{ color: "var(--text-primary)" }}
             >
-              {isTransferOnly ? "Nueva transferencia" : "Nuevo movimiento"}
+              {transaction 
+                ? (isTransferOnly ? "Editar transferencia" : "Editar movimiento")
+                : (isTransferOnly ? "Nueva transferencia" : "Nuevo movimiento")}
             </h3>
             <button
               type="button"
@@ -359,9 +402,6 @@ export default function TransactionModal({
               onClick={() => amountRef.current?.focus()}
             >
               <span style={{ fontSize: 46 }}>{intPart}</span>
-              <span style={{ fontSize: 26, color: "var(--text-placeholder)" }}>
-                {decPart}
-              </span>
               <span
                 aria-hidden
                 className="amount-cursor"
@@ -371,9 +411,13 @@ export default function TransactionModal({
                   background: accent,
                   borderRadius: 2,
                   marginLeft: 4,
+                  marginRight: 4,
                   alignSelf: "center",
                 }}
               />
+              <span style={{ fontSize: 26, color: "var(--text-placeholder)" }}>
+                {decPart}
+              </span>
             </div>
             {/* Input real invisible para captura nativa */}
             <input
@@ -408,15 +452,6 @@ export default function TransactionModal({
                 >
                   Categoría
                 </p>
-                {flatCategories.length > 8 && (
-                  <button
-                    type="button"
-                    className="text-[13px] font-semibold"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    Ver todas
-                  </button>
-                )}
               </div>
               {flatCategories.length === 0 ? (
                 <p
@@ -636,31 +671,53 @@ export default function TransactionModal({
             </div>
           )}
 
-          {/* Guardar */}
-          <button
-            type="button"
-            onClick={() => handleSubmit()}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2.5 transition-opacity disabled:opacity-70"
-            style={{
-              height: 56,
-              borderRadius: 16,
-              background: "var(--text-primary)",
-              color: "var(--bg-surface)",
-              fontSize: 16,
-              fontWeight: 700,
-              boxShadow: "0 8px 20px rgba(20,20,30,0.24)",
-            }}
-          >
-            {loading ? (
-              <RefreshCw size={18} className="animate-spin" />
-            ) : (
-              <>
-                Guardar
-                <Check size={19} />
-              </>
+          {/* Guardar y Eliminar */}
+          <div className="flex gap-3">
+            {transaction && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm("¿Estás seguro de que deseas eliminar este movimiento?")) {
+                    handleDelete();
+                  }
+                }}
+                disabled={loading}
+                className="flex items-center justify-center transition-opacity disabled:opacity-70 px-4"
+                style={{
+                  height: 56,
+                  borderRadius: 16,
+                  background: "var(--danger-bg)",
+                  color: "var(--danger)",
+                }}
+              >
+                <Trash2 size={20} />
+              </button>
             )}
-          </button>
+            <button
+              type="button"
+              onClick={() => handleSubmit()}
+              disabled={loading}
+              className="flex-1 flex items-center justify-center gap-2.5 transition-opacity disabled:opacity-70"
+              style={{
+                height: 56,
+                borderRadius: 16,
+                background: "var(--text-primary)",
+                color: "var(--bg-surface)",
+                fontSize: 16,
+                fontWeight: 700,
+                boxShadow: "0 8px 20px rgba(20,20,30,0.24)",
+              }}
+            >
+              {loading ? (
+                <RefreshCw size={18} className="animate-spin" />
+              ) : (
+                <>
+                  Guardar
+                  <Check size={19} />
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

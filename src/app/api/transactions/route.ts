@@ -14,23 +14,25 @@ export async function GET(request: NextRequest) {
     const accountId = searchParams.get("accountId");
 
     let query = `
-      SELECT id, date, type, category, amount, description,
-             accountId, createdAt, updatedAt
-      FROM fact_transacciones
+      SELECT t.id, t.date, t.type, t.category, t.amount, t.description,
+             t.accountId, t.destinationAccountId, t.debtReferenceId, t.createdAt, t.updatedAt,
+             fcc.creditCardId
+      FROM fact_transacciones t
+      LEFT JOIN fact_compras_cuotas fcc ON t.debtReferenceId = fcc.id
       WHERE 1=1
     `;
     const params: unknown[] = [];
 
     if (type) {
-      query += " AND type = ?";
+      query += " AND t.type = ?";
       params.push(type);
     }
     if (accountId) {
-      query += " AND accountId = ?";
+      query += " AND t.accountId = ?";
       params.push(accountId);
     }
 
-    query += " ORDER BY date DESC LIMIT ?";
+    query += " ORDER BY t.date DESC LIMIT ?";
     params.push(limit);
 
     const transactions = db.prepare(query).all(...params);

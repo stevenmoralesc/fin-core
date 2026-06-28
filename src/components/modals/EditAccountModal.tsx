@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, RefreshCw, Trash2, Settings } from "lucide-react";
+import { X, RefreshCw, Trash2, Settings, Banknote, Landmark, Briefcase } from "lucide-react";
 import type { AccountWithStats } from "@/app/cuentas/page";
 import { fromCents } from "@/lib/money";
 import { useFeedback } from "@/components/ui/Feedback";
@@ -122,13 +122,19 @@ export default function EditAccountModal({ account, onClose }: EditAccountModalP
                   key={t}
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, type: t }))}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors border"
+                  className="flex items-center justify-center gap-2 flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors border"
                   style={form.type === t 
                     ? { background: "var(--accent)", color: "var(--accent-fg)", borderColor: "var(--accent)" }
                     : { background: "transparent", color: "var(--text-muted)", borderColor: "var(--border)" }
                   }
                 >
-                  {t === "EFECTIVO" ? "💵 Efectivo" : t === "AHORROS" ? "🏦 Ahorros" : "🏧 Corriente"}
+                  {t === "EFECTIVO" ? (
+                    <><Banknote size={14} /> Efectivo</>
+                  ) : t === "AHORROS" ? (
+                    <><Landmark size={14} /> Ahorros</>
+                  ) : (
+                    <><Briefcase size={14} /> Corriente</>
+                  )}
                 </button>
               ))}
             </div>

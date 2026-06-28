@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, RefreshCw } from "lucide-react";
+import { X, RefreshCw, Banknote, Landmark, Briefcase } from "lucide-react";
 import { useFeedback } from "@/components/ui/Feedback";
 
 interface AddAccountModalProps {
@@ -85,13 +85,19 @@ export default function AddAccountModal({ onClose }: AddAccountModalProps) {
                   key={t}
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, type: t }))}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors border ${
+                  className={`flex items-center justify-center gap-2 flex-1 py-3 px-3 rounded-xl border text-sm font-bold transition-all ${
                     form.type === t
                       ? "bg-gray-900 text-white border-gray-900"
                       : "bg-surface text-secondary border-base hover:border-gray-300"
                   }`}
                 >
-                  {t === "EFECTIVO" ? "💵 Efectivo" : t === "AHORROS" ? "🏦 Ahorros" : "🏧 Corriente"}
+                  {t === "EFECTIVO" ? (
+                    <><Banknote size={16} /> Efectivo</>
+                  ) : t === "AHORROS" ? (
+                    <><Landmark size={16} /> Ahorros</>
+                  ) : (
+                    <><Briefcase size={16} /> Corriente</>
+                  )}
                 </button>
               ))}
             </div>

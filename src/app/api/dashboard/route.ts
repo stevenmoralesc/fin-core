@@ -153,7 +153,8 @@ export async function GET(req: NextRequest) {
     // 4. Transacciones recientes del periodo (últimas 5) + total del periodo.
     //    Incluye todas las filas, incluida la compra original a cuotas en su día.
     const txs = db.prepare(`
-      SELECT t.id, t.type, t.date, t.amount, t.category, t.description, t.accountId, t.debtReferenceId,
+      SELECT t.id, t.type, t.date, t.amount, t.category, t.description, t.accountId, t.destinationAccountId, t.debtReferenceId,
+             fcc.creditCardId,
              COALESCE(c.name, tc.name) AS paymentMethodName
       FROM fact_transacciones t
       LEFT JOIN dim_cuentas c ON t.accountId = c.id

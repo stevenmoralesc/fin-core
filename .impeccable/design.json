@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-28T00:00:00.000Z",
+  "title": "Design System: FinControl",
+  "extensions": {
+    "colorMeta": {
+      "ledger-black": {
+        "role": "primary",
+        "displayName": "Ledger Black",
+        "canonical": "oklch(0.138 0.031 264)",
+        "tonalRamp": ["#080c12", "#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#e5e7eb"]
+      },
+      "ink-hover": {
+        "role": "primary",
+        "displayName": "Ink Hover",
+        "canonical": "oklch(0.212 0.034 264)",
+        "tonalRamp": ["#080c12", "#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#e5e7eb"]
+      },
+      "income-green": {
+        "role": "secondary",
+        "displayName": "Income Green",
+        "canonical": "oklch(0.696 0.17 162)",
+        "tonalRamp": ["#022c22", "#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#a7f3d0"]
+      },
+      "expense-red": {
+        "role": "tertiary",
+        "displayName": "Expense Red",
+        "canonical": "oklch(0.637 0.237 29)",
+        "tonalRamp": ["#450a0a", "#7f1d1d", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fca5a5", "#fee2e2"]
+      },
+      "warning-amber": {
+        "role": "tertiary",
+        "displayName": "Warning Amber",
+        "canonical": "oklch(0.773 0.163 70)",
+        "tonalRamp": ["#451a03", "#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a"]
+      },
+      "base-bg": {
+        "role": "neutral",
+        "displayName": "Base Background",
+        "canonical": "oklch(0.984 0.003 247)",
+        "tonalRamp": ["#030712", "#111827", "#374151", "#6b7280", "#9ca3af", "#d1d5db", "#f3f4f6", "#f9fafb"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": ["#030712", "#111827", "#374151", "#6b7280", "#9ca3af", "#d1d5db", "#f3f4f6", "#ffffff"]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Secondary Text",
+        "canonical": "oklch(0.534 0.019 252)",
+        "tonalRamp": ["#030712", "#111827", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#f3f4f6"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Financial amounts on KPI cards. Always tabular-nums. Hanken Grotesk 700." },
+      "headline": { "displayName": "Headline", "purpose": "Section titles, modal headers, page-level view names. Hanken Grotesk 700." },
+      "title": { "displayName": "Title", "purpose": "Card headings, list group headers, sidebar wordmark. Inter 600." },
+      "body": { "displayName": "Body", "purpose": "Transaction descriptions, metadata, form labels. Inter 400. Max 60–70ch." },
+      "label": { "displayName": "Label", "purpose": "KPI card metric identifiers only — uppercase tracked. Inter 700. One per card max." },
+      "mono": { "displayName": "Mono", "purpose": "Every monetary amount without exception. JetBrains Mono, tabular-nums." }
+    },
+    "shadows": [
+      { "name": "resting", "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)", "purpose": "KPI cards at rest. Separates card from base without drawing attention." },
+      { "name": "lifted", "value": "0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07)", "purpose": "Interactive card hover state. Paired with translateY(-2px)." },
+      { "name": "floating", "value": "0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05)", "purpose": "Modals, bottom sheets, popovers, dropdowns." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for state transitions." },
+      { "name": "ease-out", "value": "cubic-bezier(0, 0, 0.2, 1)", "purpose": "Exit transitions, collapse animations." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Hover color changes, button transitions." },
+      { "name": "duration-base", "value": "200ms", "purpose": "Toggle knob slide, card lift, theme switch." },
+      { "name": "duration-slow", "value": "300ms", "purpose": "Sidebar collapse, modal enter/exit." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px", "purpose": "Sidebar becomes visible; single-column layout below." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main CTA: save, confirm, submit. Black fill, white text.",
+      "html": "<button class=\"ds-btn-primary\">Guardar</button>",
+      "css": ".ds-btn-primary { background: #111827; color: #ffffff; font-family: Inter, ui-sans-serif, system-ui; font-size: 0.875rem; font-weight: 500; padding: 12px 24px; border: none; border-radius: 12px; cursor: pointer; transition: background 0.15s ease; line-height: 1; display: inline-flex; align-items: center; gap: 8px; } .ds-btn-primary:hover { background: #1f2937; } .ds-btn-primary:focus-visible { outline: 2px solid #111827; outline-offset: 2px; } .ds-btn-primary:active { background: #374151; transform: translateY(1px); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Cancel, back, secondary actions. Transparent with border.",
+      "html": "<button class=\"ds-btn-ghost\">Cancelar</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #111827; font-family: Inter, ui-sans-serif, system-ui; font-size: 0.875rem; font-weight: 500; padding: 12px 24px; border: 1px solid #e5e7eb; border-radius: 12px; cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease; line-height: 1; } .ds-btn-ghost:hover { background: #f9fafb; border-color: #d1d5db; } .ds-btn-ghost:focus-visible { outline: 2px solid #111827; outline-offset: 2px; }"
+    },
+    {
+      "name": "KPI Card — Income",
+      "kind": "card",
+      "refersTo": "summary-card",
+      "description": "The signature financial KPI surface. Top border encodes income/expense tone. Split-numeral display amount.",
+      "html": "<div class=\"ds-summary-card ds-summary-card--income\"><div class=\"ds-summary-card__header\"><p class=\"ds-summary-card__label\">INGRESOS DEL MES</p><div class=\"ds-summary-card__icon\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"12\" y1=\"19\" x2=\"12\" y2=\"5\"/><polyline points=\"5,12 12,5 19,12\"/></svg></div></div><p class=\"ds-summary-card__amount\">$1.250<span class=\"ds-summary-card__decimal\">.000</span></p><div class=\"ds-summary-card__pill\"><div class=\"ds-summary-card__pill-label\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"12\" y1=\"19\" x2=\"12\" y2=\"5\"/><polyline points=\"5,12 12,5 19,12\"/></svg><span>Transf. recibidas</span></div><span class=\"ds-summary-card__pill-amount\">$300.000</span></div></div>",
+      "css": ".ds-summary-card { padding: 24px; border-radius: 24px; border: 1px solid #e5e7eb; border-top-width: 3px; background: #ffffff; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); display: flex; flex-direction: column; transition: transform 0.3s ease, box-shadow 0.3s ease; font-family: Inter, ui-sans-serif, system-ui; } .ds-summary-card--income { border-top-color: #10b981; } .ds-summary-card--expense { border-top-color: #ef4444; } .ds-summary-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07); } .ds-summary-card__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; } .ds-summary-card__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; padding-top: 4px; } .ds-summary-card__icon { width: 36px; height: 36px; border-radius: 12px; background: #ecfdf5; display: flex; align-items: center; justify-content: center; flex-shrink: 0; } .ds-summary-card--expense .ds-summary-card__icon { background: #fef2f2; } .ds-summary-card__amount { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: clamp(1.875rem, 3.5vw, 2.75rem); font-weight: 700; color: #111827; line-height: 1.05; letter-spacing: -0.02em; margin-top: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; } .ds-summary-card__decimal { font-size: 0.55em; color: #d1d5db; } .ds-summary-card__pill { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; } .ds-summary-card__pill-label { display: flex; align-items: center; gap: 8px; color: #6b7280; font-size: 0.75rem; font-weight: 500; min-width: 0; overflow: hidden; } .ds-summary-card__pill-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-summary-card__pill-amount { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.875rem; font-weight: 700; color: #10b981; flex-shrink: 0; font-variant-numeric: tabular-nums; } .ds-summary-card--expense .ds-summary-card__pill-amount { color: #ef4444; }"
+    },
+    {
+      "name": "Transaction Row",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "A single transaction list item: emoji icon, description + category, right-aligned Mono amount.",
+      "html": "<div class=\"ds-tx-row\"><div class=\"ds-tx-row__icon\">🛒</div><div class=\"ds-tx-row__body\"><span class=\"ds-tx-row__desc\">Mercado</span><span class=\"ds-tx-row__meta\">Alimentación · Hoy</span></div><span class=\"ds-tx-row__amount ds-tx-row__amount--expense\">−$45.000</span><button class=\"ds-tx-row__more\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button></div>",
+      "css": ".ds-tx-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; font-family: Inter, ui-sans-serif, system-ui; transition: background 0.1s ease; cursor: pointer; } .ds-tx-row:hover { background: #f9fafb; } .ds-tx-row__icon { width: 40px; height: 40px; border-radius: 12px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; } .ds-tx-row__body { flex: 1; min-width: 0; } .ds-tx-row__desc { display: block; font-size: 0.875rem; font-weight: 500; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-tx-row__meta { display: block; font-size: 0.75rem; color: #9ca3af; margin-top: 2px; } .ds-tx-row__amount { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.875rem; font-weight: 700; flex-shrink: 0; font-variant-numeric: tabular-nums; } .ds-tx-row__amount--income { color: #10b981; } .ds-tx-row__amount--expense { color: #ef4444; } .ds-tx-row__amount--transfer { color: #111827; } .ds-tx-row__more { padding: 4px; color: #9ca3af; background: transparent; border: none; border-radius: 6px; cursor: pointer; display: flex; opacity: 0; transition: opacity 0.1s ease, background 0.1s ease; } .ds-tx-row:hover .ds-tx-row__more { opacity: 1; } .ds-tx-row__more:hover { background: #e5e7eb; color: #374151; }"
+    },
+    {
+      "name": "Sidebar Nav",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Sidebar navigation: Ledger Black active state, muted gray default, rounded-xl items.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\" class=\"ds-nav-item ds-nav-item--active\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"18\" y1=\"20\" x2=\"18\" y2=\"10\"/><line x1=\"12\" y1=\"20\" x2=\"12\" y2=\"4\"/><line x1=\"6\" y1=\"20\" x2=\"6\" y2=\"14\"/></svg><span>Resumen</span></a><a href=\"#\" class=\"ds-nav-item\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"17 1 21 5 17 9\"/><path d=\"M3 11V9a4 4 0 0 1 4-4h14\"/><polyline points=\"7 23 3 19 7 15\"/><path d=\"M21 13v2a4 4 0 0 1-4 4H3\"/></svg><span>Movimientos</span></a><a href=\"#\" class=\"ds-nav-item\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 12V22H4V12\"/><path d=\"M22 7H2v5h20V7z\"/><path d=\"M12 22V7\"/><path d=\"M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z\"/><path d=\"M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z\"/></svg><span>Cuentas</span></a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 4px; font-family: Inter, ui-sans-serif, system-ui; } .ds-nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; font-size: 0.875rem; font-weight: 500; color: #6b7280; text-decoration: none; background: transparent; transition: background 0.15s ease, color 0.15s ease; } .ds-nav-item:hover { background: #f9fafb; color: #374151; } .ds-nav-item--active { background: #111827; color: #ffffff; } .ds-nav-item--active:hover { background: #1f2937; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": null,
+      "description": "Standard text field: stroke border, white fill, focus shifts border to Ledger Black.",
+      "html": "<div class=\"ds-input-group\"><label class=\"ds-input-label\">Descripción</label><input class=\"ds-input\" type=\"text\" placeholder=\"Ej. Almuerzo restaurante\" /></div>",
+      "css": ".ds-input-group { display: flex; flex-direction: column; gap: 6px; font-family: Inter, ui-sans-serif, system-ui; } .ds-input-label { font-size: 0.75rem; font-weight: 600; color: #374151; } .ds-input { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px 14px; font-family: Inter, ui-sans-serif, system-ui; font-size: 0.875rem; color: #111827; outline: none; transition: border-color 0.15s ease; width: 100%; box-sizing: border-box; } .ds-input::placeholder { color: #d1d5db; } .ds-input:focus { border-color: #111827; } .ds-input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }"
+    },
+    {
+      "name": "Type Toggle (GASTO / INGRESO)",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Pill toggle that slides between expense (red) and income (green) states. Signature modal component.",
+      "html": "<div class=\"ds-type-toggle\"><div class=\"ds-type-toggle__knob ds-type-toggle__knob--expense\"></div><button class=\"ds-type-toggle__opt ds-type-toggle__opt--active\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"12\" y1=\"5\" x2=\"12\" y2=\"19\"/><polyline points=\"19,12 12,19 5,12\"/></svg>Gasto</button><button class=\"ds-type-toggle__opt\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"12\" y1=\"19\" x2=\"12\" y2=\"5\"/><polyline points=\"5,12 12,5 19,12\"/></svg>Ingreso</button></div>",
+      "css": ".ds-type-toggle { display: flex; align-items: center; background: #f3f4f6; border-radius: 9999px; padding: 4px; position: relative; font-family: Inter, ui-sans-serif, system-ui; width: fit-content; } .ds-type-toggle__knob { position: absolute; top: 4px; left: 4px; height: calc(100% - 8px); width: calc(50% - 4px); border-radius: 9999px; transition: transform 0.2s ease, background 0.2s ease; pointer-events: none; } .ds-type-toggle__knob--expense { background: #ef4444; } .ds-type-toggle__knob--income { background: #10b981; transform: translateX(100%); } .ds-type-toggle__opt { display: flex; align-items: center; gap: 6px; padding: 8px 20px; border: none; background: transparent; border-radius: 9999px; font-size: 0.875rem; font-weight: 500; color: #6b7280; cursor: pointer; position: relative; z-index: 1; transition: color 0.2s ease; } .ds-type-toggle__opt--active { color: #ffffff; font-weight: 700; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Accountant's Ledger",
+    "overview": "FinControl's visual system is built on a single principle: the ledger. Not a banking app, not a SaaS dashboard — a well-kept record. Every element earns its place the way an entry earns its place in a ledger: by carrying information. Decoration without meaning is wasted ink.\n\nThe system is monochromatic by design. Ledger Black (#111827) is the sole accent color. Income and expense are marked in semantic green and red — not as brand choices, but as signals, the way a bookkeeper uses red ink for debits. Everything else is neutral. Color appears not because it was sprinkled for visual interest, but because it means something.\n\nThe experience should feel like opening a trusted report: clear headers, tight rows, number-forward typography. Both light and dark themes are first-class. In light mode, the surface is near-white with black ink — like paper. In dark mode, it's a deep navy-black with muted slate text — like a backlit terminal at night. Neither theme is an afterthought.",
+    "keyCharacteristics": [
+      "Numbers are the hero: financial amounts use JetBrains Mono with tabular-nums alignment, always",
+      "Color is a signal, not a style — only income green, expense red, warning amber appear in color",
+      "Light and dark themes are designed at equal fidelity; hardcoded hex values in components are forbidden",
+      "Density is earned: compact by default, nothing padded for visual comfort alone",
+      "The accent (--accent) inverts per theme: Ledger Black in light, near-white in dark"
+    ],
+    "rules": [
+      { "name": "The Signal Rule", "body": "Semantic colors (green, red, amber, blue) appear only when they encode financial or interaction meaning. Using Income Green as a decorative brand accent, a button tint, or a heading color is prohibited.", "section": "colors" },
+      { "name": "The Monochrome Rule", "body": "There is no brand color beyond Ledger Black. If you reach for a tint, a gradient, or any chromatic hue not listed as a semantic signal — stop. The palette has no room for it.", "section": "colors" },
+      { "name": "The Mono Rule", "body": "Every monetary amount uses JetBrains Mono with font-variant-numeric: tabular-nums. Proportional digits in financial data break column alignment and are a readability failure.", "section": "typography" },
+      { "name": "The Label Ceiling Rule", "body": "Uppercase tracked labels (text-[11px] font-bold uppercase tracking-widest) are permitted only on KPI card metric identifiers. They must not appear as section eyebrows, modal headers, or navigation labels anywhere else.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Shadows are a state, not a style. shadow-sm (resting) separates cards from base. shadow-md (lifted) responds to hover. shadow-lg (floating) signals overlay. Never apply shadow-lg to a resting surface.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use JetBrains Mono with font-variant-numeric: tabular-nums for every monetary amount, on every screen, without exception.",
+      "Do express income and expense exclusively in semantic green (#10b981) and red (#ef4444) — color serves as a ledger signal, not a decorative choice.",
+      "Do treat Ledger Black as the sole brand accent: primary buttons, nav active states, the wordmark, active form borders — and nothing else.",
+      "Do route every color through design tokens (--bg-*, --text-*, --border, --accent). Never hardcode hex values inside components.",
+      "Do use rounded-3xl (24px) for KPI cards, rounded-xl (12px) for inputs/nav items/icon containers, rounded-md (8px) for chips and small cells.",
+      "Do apply --shadow-sm to resting cards, --shadow-md to hovered interactive cards, --shadow-lg to floating overlays.",
+      "Do suppress number input spinners globally.",
+      "Do keep uppercase tracking labels exclusively for KPI card metric identifiers, never for section eyebrows or modal titles."
+    ],
+    "donts": [
+      "Don't use consumer banking aesthetics: saturated gradient backgrounds, oversized rounded bubbles, color fills as brand expression (Nequi, Nubank, Daviplata).",
+      "Don't use generic SaaS dashboard patterns: blue-everywhere chart cards, hero metric grids, admin-template card layouts.",
+      "Don't use gradient text (background-clip: text) or decorative gradients anywhere.",
+      "Don't use side-stripe borders (border-left or border-right > 1px in a brand color) on cards, list rows, or callouts.",
+      "Don't use semantic signal colors for anything that isn't encoding income, expense, success, or danger.",
+      "Don't apply --shadow-lg to resting surfaces.",
+      "Don't use Hanken Grotesk for body text, metadata, or labels.",
+      "Don't add uppercase-tracked eyebrows above page sections, modal titles, or navigation group labels.",
+      "Don't reuse the gradient avatar pattern (from-indigo-400 to-purple-500) as a component pattern elsewhere in the app."
+    ]
+  }
+}

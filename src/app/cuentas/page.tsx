@@ -8,7 +8,9 @@ export interface AccountWithStats extends Account {
   currentBalance: number;
   totalIngresos: number;
   totalGastos: number;
-  recentTransactions: Pick<Transaction, "id" | "date" | "type" | "amount" | "category" | "description">[];
+  totalTransferOut: number;
+  totalTransferIn: number;
+  recentTransactions: Pick<Transaction, "id" | "date" | "type" | "amount" | "category" | "description" | "accountId" | "destinationAccountId" | "debtReferenceId" | "creditCardId">[];
 }
 
 function getAccountsWithStats(): AccountWithStats[] {
@@ -41,7 +43,7 @@ function getAccountsWithStats(): AccountWithStats[] {
 
     const recentTransactions = db
       .prepare(
-        `SELECT id, date, type, amount, category, description
+        `SELECT id, date, type, amount, category, description, accountId, destinationAccountId, debtReferenceId
          FROM fact_transacciones
          WHERE accountId = ?
          ORDER BY date DESC
@@ -58,6 +60,8 @@ function getAccountsWithStats(): AccountWithStats[] {
       currentBalance,
       totalIngresos: balanceRow.totalIngresos,
       totalGastos: balanceRow.totalGastos,
+      totalTransferOut: balanceRow.totalTransferOut,
+      totalTransferIn: transferInRow.totalTransferIn,
       recentTransactions,
     };
   });

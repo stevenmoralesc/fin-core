@@ -28,6 +28,7 @@ import {
   ArrowLeftRight,
   RefreshCw,
   Trash2,
+  FileText,
 } from "lucide-react";
 import CalendarPicker from "@/components/ui/CalendarPicker";
 import type {
@@ -132,6 +133,7 @@ export default function TransactionModal({
           : (accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : ""),
         installments: String(transaction.installments || 1),
         date: transaction.date.split("T")[0],
+        description: transaction.description || "",
       };
     }
     return {
@@ -142,6 +144,7 @@ export default function TransactionModal({
       paymentMethod: accounts.length > 0 ? `ACCOUNT:${accounts[0].id}` : "",
       installments: "1",
       date: todayIso(),
+      description: "",
     };
   });
   const [loading, setLoading] = useState(false);
@@ -244,7 +247,7 @@ export default function TransactionModal({
         body: JSON.stringify({
           type: form.type,
           category: form.category,
-          description: form.category, // la categoría queda como descripción por defecto
+          description: form.description.trim() || form.category,
           amount: parseFloat(form.amount.replace(/\./g, "").replace(",", ".")),
           paymentMethodId,
           paymentMethodType,
@@ -476,7 +479,7 @@ export default function TransactionModal({
                         className="flex flex-col items-center gap-[7px] shrink-0 w-14"
                       >
                         <div
-                          className="w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all"
+                          className="w-14 h-14 rounded-[16px] flex items-center justify-center text-2xl transition-all"
                           style={{
                             background: selected
                               ? "var(--text-primary)"
@@ -516,6 +519,45 @@ export default function TransactionModal({
 
           {/* Filas: Medio de pago / Cuenta destino / Fecha */}
           <div className="flex flex-col gap-2.5 mb-[22px]">
+            {/* Descripción */}
+            <div
+              className="flex items-center gap-3 px-[14px] py-3 rounded-[14px]"
+              style={{ background: "var(--bg-surface-2)" }}
+            >
+              <div
+                className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 border"
+                style={{
+                  background: "var(--bg-surface)",
+                  borderColor: "var(--border-subtle)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <FileText size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-[10px]"
+                  style={{
+                    color: "var(--text-placeholder)",
+                    letterSpacing: "0.08em",
+                    fontFamily: "var(--font-jetbrains), monospace",
+                  }}
+                >
+                  DESCRIPCIÓN
+                </p>
+                <input
+                  type="text"
+                  placeholder="Ej: Almuerzo con clientes"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
+                  className="text-[14.5px] font-semibold bg-transparent outline-none w-full mt-px placeholder-gray-400 dark:placeholder-gray-600"
+                  style={{ color: "var(--text-primary)" }}
+                />
+              </div>
+            </div>
+
             {/* Medio de pago (o "Cuenta origen" en transferencia) */}
             <SheetRow
               icon={<CreditCard size={18} />}
@@ -655,6 +697,7 @@ export default function TransactionModal({
                 />
               </div>
             )}
+
           </div>
 
           {/* Error */}

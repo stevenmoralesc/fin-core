@@ -100,16 +100,16 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
           </button>
           {newMenuOpen && (
             <div
-              className="absolute top-full right-0 mt-2 py-1.5 rounded-xl border shadow-lg w-56 z-50"
+              className="absolute top-full right-0 mt-2 p-1.5 rounded-xl border shadow-lg w-56 z-50 flex flex-col gap-1"
               style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
             >
               <button
                 type="button"
                 onClick={() => { setNewMenuOpen(false); setNewTxModalType("MOVIMIENTO"); }}
-                className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm hover:bg-surface-2 transition-colors"
+                className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm hover:bg-surface-2 transition-colors rounded-[10px]"
                 style={{ color: "var(--text-primary)" }}
               >
-                <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--bg-surface-2)" }}>
+                <span className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: "var(--bg-surface-2)" }}>
                   <Plus size={15} style={{ color: "var(--text-secondary)" }} />
                 </span>
                 <span className="font-medium">Nuevo movimiento</span>
@@ -117,10 +117,10 @@ export default function Dashboard({ categories, creditCards }: DashboardProps) {
               <button
                 type="button"
                 onClick={() => { setNewMenuOpen(false); setNewTxModalType("TRANSFERENCIA"); }}
-                className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm hover:bg-surface-2 transition-colors"
+                className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm hover:bg-surface-2 transition-colors rounded-[10px]"
                 style={{ color: "var(--text-primary)" }}
               >
-                <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--bg-surface-2)" }}>
+                <span className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: "var(--bg-surface-2)" }}>
                   <Transfer size={15} style={{ color: "var(--text-secondary)" }} />
                 </span>
                 <span className="font-medium">Transferencia</span>

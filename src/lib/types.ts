@@ -53,6 +53,7 @@ export interface InstallmentPurchase {
   monthlyInterest: number;    // renombrado desde monthlyInterestRate
   status: "VIGENTE" | "AMORTIZADA"; // vocabulario del dominio
   creditCardId: string;
+  category?: string; // from joined transaction
   createdAt: string;
   updatedAt: string;
 }

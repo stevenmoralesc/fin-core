@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, ArrowRightLeft } from "lucide-react";
 import EditTransactionModal from "@/components/modals/EditTransactionModal";
 import type { Transaction, CategoriesByType } from "@/lib/types";
 import { formatCents } from "@/lib/money";
@@ -26,16 +26,16 @@ function dateLabel(key: string): string {
 }
 
 // Emoji por defecto si la categoría no tiene icono asignado.
-function fallbackEmoji(type: Transaction["type"]): string {
+function fallbackEmoji(type: Transaction["type"]): React.ReactNode {
   if (type === "INGRESO") return "💰";
-  if (type === "TRANSFERENCIA") return "🔄";
+  if (type === "TRANSFERENCIA") return <ArrowRightLeft size={18} />;
   return "💸";
 }
 
 function categoryEmoji(
   tx: Pick<Transaction, "type" | "category">,
   categories?: CategoriesByType,
-): string {
+): React.ReactNode {
   const entry = categories?.[tx.type]?.[tx.category]?.[0]?.icon;
   return entry || fallbackEmoji(tx.type);
 }
@@ -95,7 +95,7 @@ export default function TransactionList({
         style={{ borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)" }}
       >
         <div
-          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-lg leading-none"
+          className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 text-lg leading-none"
           style={{ background: iconBg }}
           aria-hidden
         >

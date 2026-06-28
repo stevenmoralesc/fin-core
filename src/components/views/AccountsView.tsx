@@ -160,7 +160,7 @@ export default function AccountsView({ initialAccounts, categories }: AccountsVi
                   >
                     <div className="flex items-center gap-4">
                       <div 
-                        className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105"
+                        className="w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105"
                         style={{ background: meta.bg, color: meta.fg }}
                       >
                         {meta.icon}
@@ -217,7 +217,7 @@ export default function AccountsView({ initialAccounts, categories }: AccountsVi
                       const meta = avatarMeta(selectedAccount.name, selectedAccount.type);
                       return (
                         <div 
-                          className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 shadow-sm"
+                          className="w-16 h-16 rounded-[16px] flex items-center justify-center shrink-0 shadow-sm"
                           style={{ background: meta.bg, color: meta.fg }}
                         >
                           {meta.icon}
@@ -290,25 +290,19 @@ export default function AccountsView({ initialAccounts, categories }: AccountsVi
                 </div>
 
                 {/* Movimientos recientes */}
-                <div className="rounded-[32px] border overflow-hidden shadow-sm" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
-                  <div className="flex items-center justify-between px-7 py-6 border-b" style={{ borderColor: "var(--border-subtle)" }}>
-                    <div>
-                      <h3 className="text-lg font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>Últimos Movimientos</h3>
-                    </div>
-                  </div>
+                <div>
+                  <h3 className="text-[22px] font-extrabold tracking-tight mb-5" style={{ color: "var(--text-primary)" }}>Movimientos</h3>
 
                   {selectedAccount.recentTransactions.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-center">
-                      <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: "var(--bg-surface-2)", color: "var(--text-muted)" }}>
+                    <div className="flex flex-col items-center justify-center py-20 text-center rounded-[32px] border border-dashed" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }}>
+                      <div className="w-16 h-16 rounded-[16px] flex items-center justify-center mb-4" style={{ background: "var(--bg-surface-2)", color: "var(--text-muted)" }}>
                         <Wallet size={24} strokeWidth={1.5} />
                       </div>
                       <p className="text-[15px] font-bold" style={{ color: "var(--text-primary)" }}>Sin transacciones</p>
                       <p className="text-[13px] mt-1" style={{ color: "var(--text-muted)" }}>Aún no hay actividad registrada en esta cuenta.</p>
                     </div>
                   ) : (
-                    <div className="p-2">
-                      <TransactionList transactions={selectedAccount.recentTransactions} categories={categories} />
-                    </div>
+                    <TransactionList transactions={selectedAccount.recentTransactions} categories={categories} mode="grouped" />
                   )}
                 </div>
               </div>

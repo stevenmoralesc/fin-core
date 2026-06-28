@@ -246,7 +246,7 @@ export default function BillPaymentModal({ card, billAmount, accounts, onClose }
                     >
                       {/* Avatar */}
                       <span
-                        className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+                        className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0"
                         style={{
                           background: meta.bg,
                           color: meta.fg,

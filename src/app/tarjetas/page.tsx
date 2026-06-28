@@ -30,11 +30,13 @@ function getCreditCardDetails(): CreditCardDetails[] {
   return cards.map((card) => {
     const installments = db
       .prepare(
-        `SELECT id, purchaseDate, establishment, totalAmount, totalMonths, paidMonths,
-                monthlyInterest, status, creditCardId, createdAt, updatedAt
-         FROM fact_compras_cuotas
-         WHERE creditCardId = ?
-         ORDER BY purchaseDate DESC`
+        `SELECT fcc.id, fcc.purchaseDate, fcc.establishment, fcc.totalAmount, fcc.totalMonths, fcc.paidMonths,
+                fcc.monthlyInterest, fcc.status, fcc.creditCardId, fcc.createdAt, fcc.updatedAt,
+                t.category
+         FROM fact_compras_cuotas fcc
+         LEFT JOIN fact_transacciones t ON t.debtReferenceId = fcc.id
+         WHERE fcc.creditCardId = ?
+         ORDER BY fcc.purchaseDate DESC`
       )
       .all(card.id) as InstallmentPurchase[];
 
@@ -69,11 +71,24 @@ export default async function TarjetasPage() {
     Promise.resolve(getAccounts()),
   ]);
 
-
+  const categories = await Promise.resolve(
+    (() => {
+      const rows = db
+        .prepare(`SELECT category, suggestedBudget, transactionType, icon FROM sys_config ORDER BY transactionType, category`)
+        .all() as import("@/lib/types").SystemConfig[];
+      const result: import("@/lib/types").CategoriesByType = { GASTO: {}, INGRESO: {}, TRANSFERENCIA: {} };
+      for (const row of rows) {
+        const t = row.transactionType ?? "GASTO";
+        if (!result[t][row.category]) result[t][row.category] = [];
+        result[t][row.category].push({ suggestedBudget: row.suggestedBudget, icon: row.icon });
+      }
+      return result;
+    })()
+  );
 
   return (
     <div className="px-6 md:px-10 py-8">
-      <CreditCardView initialData={details} accounts={accounts} />
+      <CreditCardView initialData={details} accounts={accounts} categories={categories} />
     </div>
   );
 }

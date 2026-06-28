@@ -15,7 +15,7 @@ interface Props {
 type TxType = "GASTO" | "INGRESO";
 
 const SECTIONS: { type: TxType; label: string; icon: typeof TrendingDown; color: string; bg: string }[] = [
-  { type: "GASTO", label: "Gastos y Presupuestos", icon: TrendingDown, color: "#ef4444", bg: "rgba(239, 68, 68, 0.1)" },
+  { type: "GASTO", label: "Gastos y Presupuestos", icon: TrendingDown, color: "var(--text-secondary)", bg: "var(--bg-surface-2)" },
   { type: "INGRESO", label: "Fuentes de Ingreso", icon: TrendingUp, color: "#10b981", bg: "rgba(16, 185, 129, 0.1)" },
 ];
 
@@ -89,7 +89,7 @@ export default function CategoriesManager({ initialCategories }: Props) {
 
                 {items.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center rounded-[32px] border border-dashed" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }}>
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: "var(--bg-surface-2)", color: "var(--text-placeholder)" }}>
+                    <div className="w-16 h-16 rounded-[24px] flex items-center justify-center mb-4" style={{ background: "var(--bg-surface-2)", color: "var(--text-placeholder)" }}>
                       <Icon size={24} strokeWidth={1.5} />
                     </div>
                     <p className="text-[15px] font-bold" style={{ color: "var(--text-primary)" }}>Sin categorías</p>
@@ -100,17 +100,16 @@ export default function CategoriesManager({ initialCategories }: Props) {
                     {items.map((cat) => (
                       <div
                         key={`${cat.transactionType}:${cat.category}`}
-                        className="group flex flex-col justify-between rounded-[24px] border p-5 transition-all duration-200 hover:shadow-md relative overflow-hidden"
+                        className="group flex flex-col justify-between rounded-[24px] p-5 transition-all duration-200 hover:shadow-md relative overflow-hidden"
                         style={{ 
-                          background: "var(--bg-surface)", 
-                          borderColor: "var(--border-subtle)",
+                          background: "var(--bg-surface-2)", 
                         }}
                       >
                         {/* Cabecera Tarjeta: Icono + Acciones */}
                         <div className="flex items-start justify-between mb-4">
                           <div 
-                            className="w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-sm transition-transform group-hover:scale-105" 
-                            style={{ background: section.bg }}
+                            className="w-14 h-14 rounded-[16px] flex items-center justify-center text-3xl shadow-sm transition-transform group-hover:scale-105" 
+                            style={{ background: section.type === "INGRESO" ? section.bg : "var(--bg-surface)" }}
                           >
                             {cat.icon || "📂"}
                           </div>
@@ -119,7 +118,7 @@ export default function CategoriesManager({ initialCategories }: Props) {
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={(e) => { e.stopPropagation(); openEdit(cat); }}
-                              className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+                              className="w-9 h-9 flex items-center justify-center rounded-[12px] transition-colors"
                               style={{ background: "var(--bg-surface-2)", color: "var(--text-secondary)" }}
                               title="Editar"
                             >
@@ -127,7 +126,7 @@ export default function CategoriesManager({ initialCategories }: Props) {
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDelete(cat); }}
-                              className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+                              className="w-9 h-9 flex items-center justify-center rounded-[12px] transition-colors"
                               style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444" }}
                               title="Eliminar"
                             >

@@ -362,7 +362,7 @@ export default function TransferModal({ accounts, onClose, onSuccess }: Props) {
             <button
               type="button"
               onClick={handleSwap}
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[38px] h-[38px] rounded-full flex items-center justify-center border transition-transform active:rotate-180"
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[38px] h-[38px] rounded-[14px] flex items-center justify-center border transition-transform active:rotate-180"
               style={{
                 background: "var(--bg-surface)",
                 borderColor: "var(--border-subtle)",
